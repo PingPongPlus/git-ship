@@ -9,7 +9,7 @@ on:
       period:
         description: Activity and cargo data window
         type: choice
-        options: [day, week, month]
+        options: [day, week, month, year]
         default: month
 
 permissions:
@@ -33,7 +33,7 @@ jobs:
           persist-credentials: false
       - name: Generate fleet
         id: ship
-        uses: PingPongPlus/git-ship@dynamic-ships
+        uses: PingPongPlus/git-ship@shipinclude1year
         with:
           username: ${{ github.repository_owner }}
           output-dir: git-ship-output

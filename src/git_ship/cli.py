@@ -38,7 +38,10 @@ def parser() -> argparse.ArgumentParser:
     render.add_argument("--seed")
     window = render.add_mutually_exclusive_group()
     window.add_argument("--activity-window", type=int, help="rolling activity window in days")
-    window.add_argument("--data-window", choices=DATA_WINDOWS, help="day (1), week (7), month (30)")
+    presets = ", ".join(f"{name} ({days})" for name, days in DATA_WINDOWS.items())
+    window.add_argument(
+        "--data-window", choices=DATA_WINDOWS, help=f"rolling period in days: {presets}"
+    )
     for name in ("ships", "scale", "fps", "duration"):
         render.add_argument(f"--{name}", type=int)
     return root

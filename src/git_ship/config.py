@@ -13,7 +13,7 @@ USERNAME = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?\Z")
 LABEL = re.compile(r"[A-Z0-9+# .-]{1,6}\Z")
 HEX = re.compile(r"#[0-9a-fA-F]{6}\Z")
 WIDTH, HEIGHT = 400, 160
-DATA_WINDOWS = {"day": 1, "week": 7, "month": 30}
+DATA_WINDOWS = {"day": 1, "week": 7, "month": 30, "year": 365}
 MAX_SHIPS = 6
 
 

@@ -7,16 +7,16 @@ A little lighthouse for you. A cargo fleet for your languages. Your GitHub READM
   <img src="examples/demo/git-ship.gif" width="800" alt="A lighthouse beside six active-language pixel ships carrying commit cargo over small foamy wakes.">
 </picture>
 
-Git Ship is an open-source **reusable GitHub Action** and Python CLI for anyone's profile. It fetches your public repository data and generates a transparent animated GIF plus a matching static PNG. **Only languages with qualifying commits appear: up to six ships, with one container per commit and at most 20 containers per ship.** Each regeneration picks fresh random placements; positions remain fixed within the seamless animation loop. Regenerate automatically every day and choose a **1-day, 7-day, or 30-day** activity window. No hosted application, external image service, or personal access token is needed for the normal setup.
+Git Ship is an open-source **reusable GitHub Action** and Python CLI for anyone's profile. It fetches your public repository data and generates a transparent animated GIF plus a matching static PNG. **Only languages with qualifying commits appear: up to six ships, with one container per commit and at most 20 containers per ship.** Each regeneration picks fresh random placements; positions remain fixed within the seamless animation loop. Regenerate automatically every day and choose a **1-day, 7-day, 30-day, or 365-day** activity window. No hosted application, external image service, or personal access token is needed for the normal setup.
 
-This is the **`dynamic-ships` feature branch**. Use `PingPongPlus/git-ship@dynamic-ships`, or pin its tested commit SHA, to opt into these changes. The default branch remains unchanged.
+This is the **`shipinclude1year` feature branch**. Use `PingPongPlus/git-ship@shipinclude1year`, or pin its commit SHA, to opt into these changes. The default branch remains unchanged.
 
 ## Set up daily updates with GitHub Actions
 
 1. Open your public profile repository: `YOUR_USERNAME/YOUR_USERNAME`.
 2. Add the workflow below as `.github/workflows/git-ship.yml` on its default branch. The complete file is also available in [examples/profile-workflow.yml](examples/profile-workflow.yml).
 3. Allow GitHub Actions to run. Repository/organization rules must permit this job's `contents: write` permission and pushes to the **`output`** branch.
-4. Run **Actions → Git Ship → Run workflow** once. Choose `day`, `week`, or `month`.
+4. Run **Actions → Git Ship → Run workflow** once. Choose `day`, `week`, `month`, or `year`.
 5. Add the README image shown below, replacing both username placeholders.
 
 ```yaml
@@ -29,7 +29,7 @@ on:
       period:
         description: Activity and cargo data window
         type: choice
-        options: [day, week, month]
+        options: [day, week, month, year]
         default: month
 
 permissions:
@@ -51,7 +51,7 @@ jobs:
           persist-credentials: false
       - name: Generate fleet
         id: ship
-        uses: PingPongPlus/git-ship@dynamic-ships
+        uses: PingPongPlus/git-ship@shipinclude1year
         with:
           username: ${{ github.repository_owner }}
           output-dir: git-ship-output
@@ -71,7 +71,7 @@ jobs:
             --default-branch "$SHIP_DEFAULT_BRANCH"
 ```
 
-`dynamic-ships` tracks this feature's development. For a stable installation, replace the branch ref with a reviewed full commit SHA. No `v1` release tag or Marketplace release is claimed yet. Nothing is hard-coded to the project's owner: the example uses **your** repository owner, your workflow token, and your repository's output branch.
+`shipinclude1year` tracks this feature's development. For a stable installation, replace the branch ref with a reviewed full commit SHA. No `v1` release tag or Marketplace release is claimed yet. Nothing is hard-coded to the project's owner: the example uses **your** repository owner, your workflow token, and your repository's output branch.
 
 ### Choose your data window
 
@@ -80,8 +80,9 @@ jobs:
 | `day` | Previous 24 hours |
 | `week` | Previous 7 × 24 hours |
 | `month` | Previous 30 × 24 hours, the default |
+| `year` | Previous 365 × 24 hours |
 
-The **update schedule and data window are independent**: a fleet with a month of data still regenerates every day. For nightly runs, set repository variable **`GIT_SHIP_DATA_WINDOW`** to `day`, `week`, or `month` under Settings → Secrets and variables → Actions → Variables. Alternatively, replace the workflow's `data-window:` expression with a fixed value such as `week`. The manual dropdown overrides the variable for that run only. A month means 30 rolling days, not a calendar-month boundary.
+The **update schedule and data window are independent**: a fleet with a year of data still regenerates every day. For nightly runs, set repository variable **`GIT_SHIP_DATA_WINDOW`** to `day`, `week`, `month`, or `year` under Settings → Secrets and variables → Actions → Variables. Alternatively, replace the workflow's `data-window:` expression with a fixed value such as `week`. The manual dropdown overrides the variable for that run only. A month means 30 rolling days and a year means 365 rolling days, not calendar boundaries.
 
 This window controls which languages appear, authored-commit cargo, repository push-recency movement, and the optional contribution total. **A language needs at least one confirmed qualifying commit to appear.** If more than six qualify, the highest current code-byte shares determine the visible fleet; sizing also uses those byte shares. A quiet window shows only the lighthouse and its small ripples.
 
@@ -116,7 +117,7 @@ Browsers that support the media query animate only with no reduced-motion prefer
 | Input | Default / meaning |
 | --- | --- |
 | `username` | Explicit input → config username → caller repository owner |
-| `data-window` | `day`, `week`, or `month`; empty uses TOML `activity_window`, then 30 days |
+| `data-window` | `day`, `week`, `month`, or `year`; empty uses TOML `activity_window`, then 30 days |
 | `output-dir` | `git-ship-output`, a subdirectory inside the caller workspace |
 | `config` | Optional TOML path inside the caller workspace |
 | `token` | Built-in `${{ github.token }}`, supplied as `GITHUB_TOKEN` internally |
@@ -151,7 +152,7 @@ Fetching considers all candidate languages until it can determine the active fle
 Requires **Python 3.11+** and **Pillow 13.x**, the only runtime dependency. See [Pillow's supported Python versions](https://pillow.readthedocs.io/en/stable/installation/python-support.html). No PyPI release is claimed; install from this source:
 
 ```sh
-git clone --branch dynamic-ships https://github.com/PingPongPlus/git-ship.git
+git clone --branch shipinclude1year https://github.com/PingPongPlus/git-ship.git
 cd git-ship
 python3 -m venv .venv # Select a Python 3.11+ interpreter.
 source .venv/bin/activate
@@ -184,13 +185,13 @@ Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/au
 
 ## Customize
 
-[examples/config.toml](examples/config.toml) lists all options. CLI flags override TOML. Action inputs override the corresponding TOML values. `--data-window day|week|month` is shorthand for `--activity-window 1|7|30`; the two flags are mutually exclusive.
+[examples/config.toml](examples/config.toml) lists all options. CLI flags override TOML. Action inputs override the corresponding TOML values. `--data-window day|week|month|year` is shorthand for `--activity-window 1|7|30|365`; the two flags are mutually exclusive.
 
 | Key | Default | Bounds / behavior |
 | --- | --- | --- |
 | `username` | empty | Required live; a GitHub user login |
 | `ships` | 6 | 0–6, limited to languages with confirmed qualifying commits |
-| `activity_window` | 30 | Rolling days, 1–365; friendly presets are 1/7/30 |
+| `activity_window` | 30 | Rolling days, 1–365; friendly presets are 1/7/30/365 |
 | `scale` | 2 | Integer 1–4; 400×160 logical grid, nearest-neighbor export |
 | `fps` | 10 | 5, 10, 20 or 25, all exact GIF centiseconds |
 | `duration` | 10 | Integer seconds, 2–20; at most 300 frames |
