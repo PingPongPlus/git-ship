@@ -2,7 +2,7 @@ The original editable artwork lives in the installed package:
 
 - `src/git_ship/sprites.py`: lighthouse, rocks, four ship designs, commit cargo, palette and art primitives.
 - `src/git_ship/font.py`: original 5×7 bitmap glyphs, including `+`, `#`, spaces and hyphens.
-- `src/git_ship/assets/languages.json`: the single language/style/abbreviation mapping.
+- `src/git_ship/assets/languages.json`: language colors and abbreviations; rendered ship type is assigned separately.
 - `src/git_ship/animation.py`: separate transient wakes, smoke, lantern states, rotating light ray and period watermark.
 
 Coordinates are logical pixels. All drawing is binary-alpha, integer-grid Pillow
@@ -15,14 +15,21 @@ Cargo uses a reserved aft-deck bank on every design: three columns, up to seven
 tiers and twenty containers total. Each constant-size 5×4-pixel container
 represents one distinct authored commit in the selected data window. Zero or
 unknown activity means the entire ship is hidden. There are no decorative cargo
-blocks. The six-language atlas uses the CLI fixture counts, including the gold JS
-freighter, TS and a C++ ship with twenty containers. Cargo stays inside the sprite;
+blocks. The six-language atlas uses the CLI fixture's labels, colors and cargo
+counts, including JS, TS and a C++ ship with twenty containers. Cargo stays inside the sprite;
 smoke passes behind it, and labels, cabins, funnels and sails remain unobstructed.
 Normal renders sample fresh positions across the sea while reserving each ship's
 full motion envelope. Bounded retries and a randomized packing fallback keep up
 to six ships clear of one another and the lighthouse. To reproduce the delivered
-demo, use `--seed demo`; this fixes positions while keeping the loop periodic.
-The atlas itself is independent of scene positions.
+demo, use `--seed demo`; this fixes positions and types while keeping the loop
+periodic. The atlas uses the same seed for deterministic type assignments and
+remains independent of scene positions.
+
+The current production pool contains four existing shapes: steamship, tug,
+freighter and sailboat. A shuffled bag uses all four before any repeats, so a
+six-ship fleet has at most two of each. The type shuffle is derived separately
+from the layout seed. It never changes a language's label, colors, custom
+configuration or commit count; shapes are not permanently assigned to languages.
 
 The optional lighthouse ray starts at the lantern and changes projected reach,
 tilt and fan width over one exact loop, creating the impression of a rotating

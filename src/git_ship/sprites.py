@@ -33,6 +33,7 @@ STONE = "#697b88"
 
 # Sprite-space mouth positions, shared by the art and its smoke emitter.
 FUNNEL_ORIGINS = {"steam": (21, 18), "tug": (21, 20)}
+SHIP_DESIGNS = ("steam", "tug", "freighter", "sail")
 
 LANGUAGES = json.loads(files("git_ship").joinpath("assets/languages.json").read_text())
 
@@ -49,7 +50,7 @@ class Style:
     trim: str
 
 
-def language_style(name: str, config: Config) -> Style:
+def language_style(name: str, config: Config, *, design: str | None = None) -> Style:
     known = LANGUAGES.get(name)
     if not isinstance(known, dict):
         variants = LANGUAGES["fallbacks"]
@@ -65,13 +66,15 @@ def language_style(name: str, config: Config) -> Style:
         hull = "#" + "".join(f"{round(c * 0.52):02x}" for c in (r, g, b))
     else:
         trim = known["trim"]
-    return Style(label, known["design"], hull, trim)
+    return Style(label, design if design is not None else known["design"], hull, trim)
 
 
 def ship_sprite(style: Style, width: int, cargo: int = 0) -> Image.Image:
     """A right-facing boat, its hull at y=39..52; lettering never scales."""
     if type(cargo) is not int or not 0 <= cargo <= CARGO_LIMIT:
         raise ValueError(f"cargo must be an integer in 0..{CARGO_LIMIT}")
+    if style.design not in SHIP_DESIGNS:
+        raise ValueError(f"unknown ship design: {style.design}")
     image = Image.new("RGBA", (width, 56))
     d = ImageDraw.Draw(image)
     mid = width - 13

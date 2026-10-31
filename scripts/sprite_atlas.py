@@ -11,7 +11,7 @@ from git_ship.model import Profile
 from git_ship.sprites import lighthouse_sprite, ship_sprite
 
 with as_file(files("git_ship").joinpath("assets/demo.json")) as path:
-    fleet = layout(Profile.read(path), Config())
+    fleet = layout(Profile.read(path), Config(seed="demo"))
 atlas = Image.new("RGBA", (60 + 70 * len(fleet.ships), 100))
 atlas.alpha_composite(lighthouse_sprite(), (4, 4))
 for i, ship in enumerate(fleet.ships):

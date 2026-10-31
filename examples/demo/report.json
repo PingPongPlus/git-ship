@@ -4,20 +4,21 @@
   "frames": 100,
   "fps": 10,
   "duration_seconds": 10.0,
-  "gif_bytes": 947276,
-  "min_transparent_fraction": 0.741875,
-  "max_transparent_fraction": 0.84271875,
+  "gif_bytes": 969933,
+  "min_transparent_fraction": 0.73821875,
+  "max_transparent_fraction": 0.841171875,
   "decoded_frames_match": true,
   "activity_window_days": 30,
   "layout_seed": "demo",
   "lighthouse_beam": true,
   "watermark": true,
   "watermark_text": "git-ship past month commit & shipped code",
-  "png_bytes": 6356,
+  "png_bytes": 6567,
   "languages": [
     {
       "name": "Java",
       "label": "JAVA",
+      "design": "freighter",
       "code_share": 0.285714,
       "activity": 0.95,
       "width": 53,
@@ -28,6 +29,7 @@
     {
       "name": "C++",
       "label": "C++",
+      "design": "sail",
       "code_share": 0.25,
       "activity": 0.95,
       "width": 52,
@@ -38,6 +40,7 @@
     {
       "name": "Python",
       "label": "PYTHON",
+      "design": "steam",
       "code_share": 0.214286,
       "activity": 0.683333,
       "width": 51,
@@ -48,6 +51,7 @@
     {
       "name": "Rust",
       "label": "RUST",
+      "design": "tug",
       "code_share": 0.142857,
       "activity": 0.45,
       "width": 50,
@@ -58,6 +62,7 @@
     {
       "name": "JavaScript",
       "label": "JS",
+      "design": "freighter",
       "code_share": 0.071429,
       "activity": 0.883333,
       "width": 48,
@@ -68,6 +73,7 @@
     {
       "name": "TypeScript",
       "label": "TS",
+      "design": "steam",
       "code_share": 0.035714,
       "activity": 0.916667,
       "width": 47,

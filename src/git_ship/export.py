@@ -119,6 +119,7 @@ def export(
             {
                 "name": s.language.name,
                 "label": s.style.label,
+                "design": s.style.design,
                 "code_share": round(s.language.share, 6),
                 "activity": round(s.language.activity, 6),
                 "width": s.width,

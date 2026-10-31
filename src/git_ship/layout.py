@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from .config import HEIGHT, WIDTH, Config
 from .model import Language, Profile, global_activity, rank_languages
-from .sprites import Style, language_style, stable_seed
+from .sprites import SHIP_DESIGNS, Style, language_style, stable_seed
 from .watermark import WATERMARK_HEIGHT
 
 
@@ -96,13 +96,23 @@ def layout(profile: Profile, config: Config) -> Scene:
     identity = profile.username.casefold()
     widths = [min(round(44 + 16 * math.sqrt(language.share)), 62) for language in languages]
     positions = placements(widths, rng, WATERMARK_HEIGHT if config.watermark else 0)
+    # Each shuffled bag uses every approved design before repeating. Ship shapes
+    # are chosen per generation, independently of the language they carry.
+    design_rng = random.Random(stable_seed(f"{layout_seed}:ships"))
+    designs = []
+    while len(designs) < len(languages):
+        bag = list(SHIP_DESIGNS)
+        design_rng.shuffle(bag)
+        designs.extend(bag)
     ships = []
-    for language, width, (x, y) in zip(languages, widths, positions, strict=True):
+    for language, width, (x, y), design in zip(
+        languages, widths, positions, designs[: len(languages)], strict=True
+    ):
         phase = (stable_seed(f"{identity}:{language.name}") % 1024) / 1024
         ships.append(
             Ship(
                 language,
-                language_style(language.name, config),
+                language_style(language.name, config, design=design),
                 x,
                 y,
                 width,
