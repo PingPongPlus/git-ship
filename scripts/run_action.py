@@ -29,6 +29,11 @@ def run() -> int:
             if beam not in ("true", "false"):
                 raise ValueError("lighthouse-beam must be true or false")
             args.append("--lighthouse-beam" if beam == "true" else "--no-lighthouse-beam")
+        watermark = os.environ.get("SHIP_WATERMARK", "").strip().lower()
+        if watermark:
+            if watermark not in ("true", "false"):
+                raise ValueError("watermark must be true or false")
+            args.append("--watermark" if watermark == "true" else "--no-watermark")
         data_window = os.environ.get("SHIP_DATA_WINDOW", "").strip().lower()
         if data_window:
             if data_window not in DATA_WINDOWS:

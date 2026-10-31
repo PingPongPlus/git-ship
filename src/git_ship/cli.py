@@ -42,6 +42,12 @@ def parser() -> argparse.ArgumentParser:
         default=None,
         help="enable or disable the rotating lighthouse ray",
     )
+    render.add_argument(
+        "--watermark",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="enable or disable the project and activity-period watermark",
+    )
     window = render.add_mutually_exclusive_group()
     window.add_argument("--activity-window", type=int, help="rolling activity window in days")
     presets = ", ".join(f"{name} ({days})" for name, days in DATA_WINDOWS.items())
@@ -65,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
             "activity_window",
             "seed",
             "lighthouse_beam",
+            "watermark",
             "observation_date",
         )
         overrides = {k: getattr(args, k) for k in keys}

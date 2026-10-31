@@ -41,6 +41,7 @@ jobs:
           # Scheduled default: repository variable GIT_SHIP_DATA_WINDOW, or month.
           data-window: ${{ inputs.period || vars.GIT_SHIP_DATA_WINDOW || 'month' }}
           # lighthouse-beam: 'false' # Optional: disable the rotating ray.
+          # watermark: 'false' # Optional: hide the Git Ship and data-period label.
           # config: .github/git-ship.toml
       - name: Publish only images to output branch
         env:

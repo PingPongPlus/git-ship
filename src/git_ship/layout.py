@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from .config import HEIGHT, WIDTH, Config
 from .model import Language, Profile, global_activity, rank_languages
 from .sprites import Style, language_style, stable_seed
+from .watermark import WATERMARK_HEIGHT
 
 
 @dataclass(frozen=True)
@@ -32,7 +33,7 @@ class Scene:
     layout_seed: str = ""
 
 
-def placements(widths: list[int], rng: random.Random) -> list[tuple[int, int]]:
+def placements(widths: list[int], rng: random.Random, top_margin: int = 0) -> list[tuple[int, int]]:
     """Sample the entire sea, retrying bounded packs before a guaranteed fit."""
     if not widths:
         return []
@@ -49,7 +50,7 @@ def placements(widths: list[int], rng: random.Random) -> list[tuple[int, int]]:
             width = widths[index]
             for _ in range(160):
                 x = rng.randint(82, WIDTH - width - 9)
-                y = rng.randint(2, HEIGHT - 64)
+                y = rng.randint(2 + top_margin, HEIGHT - 64)
                 box = (x - 8, y - 2, x + width + 8, y + 63)
                 if all(separated(box, other) for other in boxes):
                     positions[index] = (x, y)
@@ -69,12 +70,16 @@ def placements(widths: list[int], rng: random.Random) -> list[tuple[int, int]]:
     rng.shuffle(columns)
     cells = [(column, row) for column in range(3) for row in range(2)]
     rng.shuffle(cells)
-    splits = [rng.randint(68, 90) for _ in range(3)]
+    splits = [rng.randint(68 + top_margin, 90) for _ in range(3)]
     result = []
     for width, (column, row) in zip(widths, cells, strict=False):
         left = 74 + sum(columns[:column])
         x = rng.randint(left + 8, left + columns[column] - width - 10)
-        y = rng.randint(2, splits[column] - 64) if row == 0 else rng.randint(splits[column] + 4, 96)
+        y = (
+            rng.randint(2 + top_margin, splits[column] - 64)
+            if row == 0
+            else rng.randint(splits[column] + 4, 96)
+        )
         result.append((x, y))
     return result
 
@@ -90,7 +95,7 @@ def layout(profile: Profile, config: Config) -> Scene:
     rng = random.Random(stable_seed(layout_seed))
     identity = profile.username.casefold()
     widths = [min(round(44 + 16 * math.sqrt(language.share)), 62) for language in languages]
-    positions = placements(widths, rng)
+    positions = placements(widths, rng, WATERMARK_HEIGHT if config.watermark else 0)
     ships = []
     for language, width, (x, y) in zip(languages, widths, positions, strict=True):
         phase = (stable_seed(f"{identity}:{language.name}") % 1024) / 1024

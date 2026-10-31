@@ -5,8 +5,9 @@ CI covers Python **3.11/3.15** and runs the root composite action with Python **
 The public destination is [PingPongPlus/git-ship](https://github.com/PingPongPlus/git-ship).
 This revision targets `main` and retains the rolling 365-day preset. It fixes
 renamed-account commit attribution, samples ship positions across the sea, and
-adds a configurable rotating lighthouse ray. No `v1` or Marketplace release is
-claimed. Hosted results are available under the repository's Actions tab.
+adds a configurable rotating lighthouse ray and period watermark. No `v1` or
+Marketplace release is claimed. Hosted results are available under the
+repository's Actions tab.
 
 ## Commands and results
 
@@ -17,7 +18,7 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **94 passed** in 5.83 seconds, with no live API required. |
+| `pytest -q` | **119 passed** in 6.95 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
@@ -74,7 +75,7 @@ Ordinary tests never depend on GitHub availability or write to a remote service.
   fall back to randomized column widths and independent vertical splits when a
   dense fleet needs a guaranteed fit. Positions remain fixed through the loop.
   An explicit `--seed` makes the complete scene repeatable; the report records
-  `layout_seed`, coordinates and the ray setting.
+  `layout_seed`, coordinates, ray/watermark settings and watermark text.
 
 ## Renamed-account undercount investigation
 
@@ -109,6 +110,17 @@ color blending, disable setting and exact decoded GIF cleanup.
 the action input `lighthouse-beam: 'false'` disables the ray while retaining the
 lantern blink. The default is enabled.
 
+## Watermark contracts
+
+The default-enabled top-left label uses the existing uppercase pixel font and
+gray lettering. For the month preset it reads
+`GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE`; day, week, year and custom day counts
+follow the selected activity window. Layout reserves a 14-pixel header for the
+label, and drawing it after the ray keeps the lettering untinted. The report
+records `watermark` and `watermark_text`. `watermark = false`, `--no-watermark`,
+or the action input `watermark: 'false'` hides the label. It has no effect on
+commit attribution or cargo counts.
+
 ## Action and publishing contracts
 
 The action entry point is executed in tests with the real caller-style environment,
@@ -138,19 +150,22 @@ Fixture: `src/git_ship/assets/demo.json`, observed on **2026-10-01**.
 | Loop | Infinite; no extra closing-frame hold |
 | Layout seed | `demo` |
 | Lighthouse ray | Enabled |
-| GIF | **816,046 bytes**, below 2 MB target |
-| PNG | **5,914 bytes**, genuine RGBA |
-| Fully transparent pixels over every frame | **74.7375%–85.7734375%** |
+| Watermark | Enabled; `GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE` |
+| GIF | **947,276 bytes**, below 2 MB target |
+| PNG | **6,356 bytes**, genuine RGBA |
+| Fully transparent pixels over every frame | **74.1875%–84.271875%** |
 | Alpha / palette / disposal | Binary alpha, one shared palette, transparent index 0, disposal 2 |
 | Decoded comparison | All 100 frames exactly match intended alpha and visible RGB |
 | Cargo, in report order | JAVA 7 / C++ 20 / PYTHON 6 / RUST 4 / JS 5 / TS 2 |
 
 The solid ray intentionally occupies otherwise empty pixels while sweeping,
-reducing the demo's minimum transparency to about 74.74%. Tests continue to
-require at least 80% transparency for the fleet with the ray disabled. With the
+reducing the demo's minimum transparency to about 74.19% with the watermark
+enabled. Tests continue to require at least 80% transparency for the fleet with
+the ray disabled. With the
 ray enabled, exact binary alpha, palette colors and decoded cleanup remain
 verified. The regenerated contact sheet was inspected for readable Java, Rust
-and JavaScript artwork under the yellow tint.
+and JavaScript artwork under the yellow tint and for clear header lettering that
+fits above the ships.
 
 Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 `contact-sheet.png`, `preview.html`, `examples/reduced-motion.html`, and

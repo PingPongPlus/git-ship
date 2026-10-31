@@ -42,7 +42,7 @@ def test_beam_is_solid_over_empty_space_and_translucent_over_colored_pixels():
 
 
 def test_beam_toggle_blends_light_over_lighthouse_and_ship_art(demo):
-    config = Config(scale=1, seed="beam-toggle", lighthouse_beam=False)
+    config = Config(scale=1, seed="beam-toggle", lighthouse_beam=False, watermark=False)
     scene = layout(demo, config)
     dark = Animator(scene, config)
     lit = Animator(scene, replace(config, lighthouse_beam=True))

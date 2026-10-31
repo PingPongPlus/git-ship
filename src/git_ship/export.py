@@ -15,6 +15,7 @@ from PIL import GifImagePlugin, Image, ImageChops
 from .animation import Animator
 from .config import Config
 from .layout import Scene
+from .watermark import watermark_label
 
 
 def indexed_frames(frames: list[Image.Image]) -> list[Image.Image]:
@@ -108,6 +109,10 @@ def export(
         report["activity_window_days"] = config.activity_window
         report["layout_seed"] = scene.layout_seed
         report["lighthouse_beam"] = config.lighthouse_beam
+        report["watermark"] = config.watermark
+        report["watermark_text"] = (
+            watermark_label(config.activity_window) if config.watermark else None
+        )
         frames[0].save(root / "git-ship.png")
         report["png_bytes"] = (root / "git-ship.png").stat().st_size
         report["languages"] = [

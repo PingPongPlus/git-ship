@@ -7,7 +7,7 @@ A little lighthouse for you. A cargo fleet for your languages. Your GitHub READM
   <img src="examples/demo/git-ship.gif" width="800" alt="A lighthouse beside six active-language pixel ships carrying commit cargo over small foamy wakes.">
 </picture>
 
-Git Ship is an open-source **reusable GitHub Action** and Python CLI for anyone's profile. It fetches your public repository data and generates a transparent animated GIF plus a matching static PNG. **Only languages with qualifying commits appear: up to six ships, with one container per commit and at most 20 containers per ship.** Each regeneration picks fresh positions across the sea; positions remain fixed within the seamless animation loop. An optional rotating lighthouse ray sweeps a solid yellow cone across the scene and tints the artwork it crosses. Regenerate automatically every day and choose a **1-day, 7-day, 30-day, or 365-day** activity window. No hosted application, external image service, or personal access token is needed for the normal setup.
+Git Ship is an open-source **reusable GitHub Action** and Python CLI for anyone's profile. It fetches your public repository data and generates a transparent animated GIF plus a matching static PNG. **Only languages with qualifying commits appear: up to six ships, with one container per commit and at most 20 containers per ship.** Each regeneration picks fresh positions across the sea; positions remain fixed within the seamless animation loop. An optional rotating lighthouse ray sweeps a solid yellow cone across the scene and tints the artwork it crosses. A small optional watermark at the top left names Git Ship and the selected period. Regenerate automatically every day and choose a **1-day, 7-day, 30-day, or 365-day** activity window. No hosted application, external image service, or personal access token is needed for the normal setup.
 
 Use `PingPongPlus/git-ship@main` for the current source action, or pin a reviewed full commit SHA for a stable installation.
 
@@ -84,6 +84,8 @@ jobs:
 
 The **update schedule and data window are independent**: a fleet with a year of data still regenerates every day. For nightly runs, set repository variable **`GIT_SHIP_DATA_WINDOW`** to `day`, `week`, `month`, or `year` under Settings → Secrets and variables → Actions → Variables. Alternatively, replace the workflow's `data-window:` expression with a fixed value such as `week`. The manual dropdown overrides the variable for that run only. A month means 30 rolling days and a year means 365 rolling days, not calendar boundaries.
 
+For hourly refreshes, change the workflow cron to `'23 * * * *'`. It requests a refresh at minute 23 of every hour; the selected data window stays independent of that schedule.
+
 This window controls which languages appear, authored-commit cargo, repository push-recency movement, and the optional contribution total. **A language needs at least one confirmed qualifying commit to appear.** If more than six qualify, the highest current code-byte shares determine the visible fleet; sizing also uses those byte shares. A quiet window shows only the lighthouse and its small ripples.
 
 Cron defaults to UTC: 03:23 UTC is 04:23 CET / 05:23 CEST. Scheduled workflows must exist on the default branch and can be delayed or dropped during load. Inactive public repositories can have schedules disabled after 60 days. See [GitHub's schedule documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
@@ -119,6 +121,7 @@ Browsers that support the media query animate only with no reduced-motion prefer
 | `username` | Explicit input → config username → caller repository owner |
 | `data-window` | `day`, `week`, `month`, or `year`; empty uses TOML `activity_window`, then 30 days |
 | `lighthouse-beam` | `true` or `false`; empty uses TOML `lighthouse_beam`, enabled by default |
+| `watermark` | `true` or `false`; empty uses TOML `watermark`, enabled by default |
 | `output-dir` | `git-ship-output`, a subdirectory inside the caller workspace |
 | `config` | Optional TOML path inside the caller workspace |
 | `token` | Built-in `${{ github.token }}`, supplied as `GITHUB_TOKEN` internally |
@@ -179,7 +182,7 @@ Open `out/preview.html` directly or serve it with `python -m http.server 8000` a
 | --- | --- |
 | `git-ship.gif` | Transparent endlessly looping animation |
 | `git-ship.png` | Transparent static frame zero |
-| `report.json` | Dimensions, timing, size, transparency, window days, beam setting, ship positions, cargo counts and replayable layout seed |
+| `report.json` | Dimensions, timing, size, transparency, window days, beam/watermark settings, watermark text, ship positions, cargo counts and replayable layout seed |
 | `preview.html` | Optional light/dark playback and pause control |
 | `contact-sheet.png` | Optional four-time-point verification sheet |
 
@@ -199,6 +202,7 @@ Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/au
 | `duration` | 10 | Integer seconds, 2–20; at most 300 frames |
 | `seed` | fresh random value | Optional string/integer to reproduce placement; omit for new positions on each run |
 | `lighthouse_beam` | true | Rotating lighthouse ray; set false to disable |
+| `watermark` | true | Top-left Git Ship and data-period label; set false to disable |
 | `observation_date` | current instant live | ISO/TOML date; override uses end of that UTC date; offline uses its fixture instant/date |
 | `include_forks` | false | Include owned public forks when explicitly enabled |
 | `include_archived` | true | Archived code contributes by default |
@@ -208,6 +212,8 @@ Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/au
 | `[colors]` | language mapping | `#RRGGBB`; bright colors become trim with a darkened hull |
 
 To disable the ray, add `lighthouse-beam: 'false'` under the action's `with:` block, set `lighthouse_beam = false` in TOML, or pass `--no-lighthouse-beam` to the CLI. Use `--lighthouse-beam` to enable it explicitly. The setting does not change cargo counts or ship placement.
+
+The watermark reads **`GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE`** for the month preset. It follows the selected day, week, month or year window; a custom window uses its number of days. It uses the project's uppercase pixel font and gray lettering at the top left. To hide it, set the action input `watermark: 'false'`, use `watermark = false` in TOML, or pass `--no-watermark`. `--watermark` enables it explicitly. This display setting does not change commit counts.
 
 Abbreviations include JS, TS, IPYNB, and OBJ-C. Unknown names use an uppercase ASCII approximation truncated to six characters; configure labels to avoid collisions. Full language names remain in the report. Unknown languages receive deterministic design/color variants. An inactive window keeps the lighthouse, its optional ray and localized ripples, with no idle ships. Total export workload is capped at **80 million frame-pixels** before allocation; not every otherwise-valid scale/fps/duration combination fits. RGBA, indexed and verification frames make peak memory several times the pixel count.
 
@@ -221,6 +227,8 @@ The optional [GraphQL contribution calendar](https://docs.github.com/en/graphql/
 
 Each render samples positions throughout the sea to the right of the lighthouse, rejecting placements whose full wake/drift/bob/smoke envelopes overlap or leave the canvas. Bounded retries keep layout work finite; dense fleets fall back to randomized column widths and independent vertical splits that guarantee room. Hull width is `min(round(44 + 16*sqrt(share)), 62)`, so names and cargo stay readable even with six ships. A fresh random seed is chosen **once per render**, never per frame. `report.json` stores `layout_seed` and ship coordinates; pass the seed back through `--seed` with the same profile/config to reproduce the GIF. The demo artifacts use `--seed demo`. Refreshing a README replays its existing GIF; a new workflow run generates the new placement.
 
+A 14-pixel header reserves space for the watermark. The label is drawn after the ray, keeping its gray lettering untinted throughout the animation. The report records `watermark` and `watermark_text` alongside the selected activity window.
+
 The lighthouse ray rotates once per loop. Its projected length, tilt and fan width change as it turns toward and away from the viewer. The cone is solid yellow over empty space. Where it crosses existing artwork, its color is blended with the original pixel at **30% yellow and 70% original color**, so the light and underlying ship, label or wave remain visible together. The ray is applied after the scene is drawn; pixels outside it remain unchanged. Disabling it retains the lantern's normal blink.
 
 For normalized loop time `t` and stable phase `p`, horizontal drift is `round((2.5 + 1.5*activity)*sin(2π(t+p)))`; bob is `round((1.2 + 0.8*energy)*sin(4π(t+p)))`. Names and cargo move with the same sprite. Boats face right while surging and easing astern in their small mooring area; there is no offscreen wrap or teleport.
@@ -229,7 +237,7 @@ Three blue/white wake clusters cycle three times per loop, visible for phases 0.
 
 PNG has real binary RGBA alpha. The ray's tint is preblended into RGB while its pixels remain fully opaque, keeping the same result in GIF. GIF uses one exact shared palette, transparency index **0**, full-frame image blocks and **disposal 2**, with optimization disabled. Outside the ray and scene artwork, the sea and sky remain transparent; no matte, quantization, antialiasing or checkerboard is drawn. Pillow's public GIF block helpers preserve identical adjacent frames in quiet scenes. Every saved GIF frame is decoded and compared against intended alpha and visible RGB, including vacated pixels, before images replace existing assets. See [Pillow's GIF options](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif).
 
-Current six-ship demo with the solid ray enabled: **800×320**, **100 frames**, **10 fps**, **10 seconds**, **816,046 GIF bytes**; PNG **5,914 bytes**. Every frame is **74.74–85.77% fully transparent**. The filled ray occupies additional space as it sweeps; the ray-disabled fleet retains the tested 80% minimum transparency. Sizes may change with source/palette/Pillow versions; `report.json` records actual measurements. The 2 MB target is a warning threshold, not a reason to hide names or cargo. 800 px is recommended; 400 px is the compact proof.
+Current six-ship demo with the solid ray and watermark enabled: **800×320**, **100 frames**, **10 fps**, **10 seconds**, **947,276 GIF bytes**; PNG **6,356 bytes**. Every frame is **74.19–84.27% fully transparent**. The filled ray occupies additional space as it sweeps; the ray-disabled fleet retains the tested 80% minimum transparency. Sizes may change with source/palette/Pillow versions; `report.json` records actual measurements. The 2 MB target is a warning threshold, not a reason to hide names or cargo. 800 px is recommended; 400 px is the compact proof.
 
 ## Develop, test and inspect
 
@@ -243,7 +251,7 @@ python scripts/sprite_atlas.py
 git-ship render --demo --seed demo --preview --output-dir examples/demo
 ```
 
-Ordinary tests use fixtures and local temporary Git repositories, with no live API or push requirement. They cover active-language discovery below inactive candidates, six-ship limits, randomized/replayable layouts across the sea, disjoint full motion envelopes across many seeds, the 20-container cap, file/commit pagination, renamed-account author attribution, SHA deduplication, time windows, unknown caches, cargo/label clearance, beam rotation and its disable setting, loop continuity, exact decoded cleanup, offline CLI/action execution, and isolated output-branch publishing. CI runs on pushes and pull requests with Python 3.11/3.15, lint, tests, package build and an offline render. A separate job invokes the actual local root composite action with `uses: ./` and a selected data window. CI does not publish images or releases. Dependabot checks Actions and Python dependencies monthly. Actions currently use v7 major refs; pin immutable SHAs if required by your policy.
+Ordinary tests use fixtures and local temporary Git repositories, with no live API or push requirement. They cover active-language discovery below inactive candidates, six-ship limits, randomized/replayable layouts across the sea, disjoint full motion envelopes across many seeds, the 20-container cap, file/commit pagination, renamed-account author attribution, SHA deduplication, time windows, unknown caches, cargo/label clearance, beam rotation and its disable setting, the period watermark, loop continuity, exact decoded cleanup, offline CLI/action execution, and isolated output-branch publishing. CI runs on pushes and pull requests with Python 3.11/3.15, lint, tests, package build and an offline render. A separate job invokes the actual local root composite action with `uses: ./` and a selected data window. CI does not publish images or releases. Dependabot checks Actions and Python dependencies monthly. Actions currently use v7 major refs; pin immutable SHAs if required by your policy.
 
 Editable artwork is documented in [artwork/README.md](artwork/README.md). The renderer separates fetching (`github.py`), normalization/ranking (`model.py`), filename attribution (`languages.py`), validation (`config.py`), safe layout (`layout.py`), pixel art (`sprites.py`, `font.py`), animation (`animation.py`), export/audit (`export.py`) and local proof (`preview.py`). `scripts/run_action.py` runs the same CLI for any caller; `scripts/publish_assets.py` is optional and separate.
 

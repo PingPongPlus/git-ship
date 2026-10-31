@@ -3,7 +3,7 @@ The original editable artwork lives in the installed package:
 - `src/git_ship/sprites.py`: lighthouse, rocks, four ship designs, commit cargo, palette and art primitives.
 - `src/git_ship/font.py`: original 5×7 bitmap glyphs, including `+`, `#`, spaces and hyphens.
 - `src/git_ship/assets/languages.json`: the single language/style/abbreviation mapping.
-- `src/git_ship/animation.py`: separate transient wakes, smoke, lantern states and rotating light ray.
+- `src/git_ship/animation.py`: separate transient wakes, smoke, lantern states, rotating light ray and period watermark.
 
 Coordinates are logical pixels. All drawing is binary-alpha, integer-grid Pillow
 primitives. Integer output scaling uses nearest-neighbor sampling. Hulls can grow
@@ -32,6 +32,13 @@ and 70% original color so both the ray and underlying art remain visible. Alpha
 stays binary for exact GIF export; pixels outside the cone are unchanged. Set
 `lighthouse_beam = false` in TOML, `lighthouse-beam: 'false'` in the action, or
 use `--no-lighthouse-beam` to disable it without changing the lantern blink.
+
+The optional top-left watermark uses gray lettering in the existing uppercase
+pixel font. It reads `GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE` for the month
+preset and substitutes the selected day/week/month/year period or custom number
+of days. A 14-pixel header reserves space above the ships. It is drawn after the
+ray so the lettering keeps its own color. Set `watermark = false` in TOML,
+`watermark: 'false'` in the action, or use `--no-watermark` to hide it.
 
 Regenerate the editable sprite atlas and demo with:
 

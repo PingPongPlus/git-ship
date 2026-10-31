@@ -20,6 +20,7 @@ from .sprites import (
     lighthouse_sprite,
     ship_sprite,
 )
+from .watermark import draw_watermark
 
 TAU = math.tau
 LIGHT_ORIGIN = (38, 47)
@@ -160,6 +161,8 @@ class Animator:
             image.alpha_composite(sprite, (m.x, m.y))
         if self.config.lighthouse_beam:
             lighthouse_beam(image, t)
+        if self.config.watermark:
+            draw_watermark(image, self.config.activity_window)
         if self.config.scale != 1:
             image = image.resize(
                 (WIDTH * self.config.scale, HEIGHT * self.config.scale), Image.Resampling.NEAREST
