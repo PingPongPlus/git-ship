@@ -24,10 +24,15 @@ def run() -> int:
         if demo not in ("true", "false"):
             raise ValueError("demo must be true or false")
         args = ["render", "--output-dir", str(output)]
+        beam = os.environ.get("SHIP_LIGHTHOUSE_BEAM", "").strip().lower()
+        if beam:
+            if beam not in ("true", "false"):
+                raise ValueError("lighthouse-beam must be true or false")
+            args.append("--lighthouse-beam" if beam == "true" else "--no-lighthouse-beam")
         data_window = os.environ.get("SHIP_DATA_WINDOW", "").strip().lower()
         if data_window:
             if data_window not in DATA_WINDOWS:
-                raise ValueError("data-window must be day, week or month")
+                raise ValueError(f"data-window must be one of: {', '.join(DATA_WINDOWS)}")
             args += ["--data-window", data_window]
         if config_path:
             args += ["--config", str(config_path)]

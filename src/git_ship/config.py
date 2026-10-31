@@ -26,6 +26,7 @@ class Config:
     duration: int = 10
     activity_window: int = 30
     seed: str | int | None = None
+    lighthouse_beam: bool = True
     include_forks: bool = False
     include_archived: bool = True
     include: tuple[str, ...] = ()
@@ -57,7 +58,7 @@ class Config:
             raise ValueError(
                 "export exceeds 80 million frame-pixels; reduce scale, duration or fps"
             )
-        for name in ("include_forks", "include_archived"):
+        for name in ("include_forks", "include_archived", "lighthouse_beam"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be true or false")
         for name in ("include", "exclude"):

@@ -12,6 +12,7 @@ from .layout import Scene, Ship
 from .sprites import (
     FOAM,
     FUNNEL_ORIGINS,
+    GOLD,
     SMOKE,
     SMOKE_LIGHT,
     SMOKE_SHADE,
@@ -22,6 +23,9 @@ from .sprites import (
 )
 
 TAU = math.tau
+LIGHT_ORIGIN = (38, 47)
+BEAM_LIGHT = "#f4dda0"
+BEAM_SHADE = "#dcb86b"
 
 
 @dataclass(frozen=True)
@@ -72,6 +76,40 @@ def smoke_puff(d: ImageDraw.ImageDraw, x: int, bottom: int, age: float) -> None:
     d.rectangle((x - radius + 1, bottom - 2 * radius, x + 1, bottom - radius), fill=SMOKE_LIGHT)
 
 
+def lighthouse_beam(image: Image.Image, t: float) -> None:
+    """Project one rotating fan, using sparse pixels instead of GIF alpha fading."""
+    angle = TAU * (t % 1)
+    facing = math.cos(angle)
+    depth = abs(facing)
+    reach = round(354 * facing)
+    # Foreshortening collapses the fan as the lamp points toward/away from us.
+    # Its tilt and widening tip distinguish a turning lamp from a blinking ray.
+    if abs(reach) < 4:
+        return
+    x, y = LIGHT_ORIGIN
+    tip_x = x + reach
+    tip_y = y + round((20 + 65 * math.sin(angle)) * depth)
+    spread = max(1, round(24 * depth))
+    vertices = [(x, y), (tip_x, tip_y - spread), (tip_x, tip_y + spread)]
+    mask = Image.new("1", image.size)
+    ImageDraw.Draw(mask).polygon(vertices, fill=1)
+    bounds = mask.getbbox()
+    if bounds is None:
+        return
+    left, top, right, bottom = bounds
+    pixels, inside = image.load(), mask.load()
+    # A fixed world-space pattern avoids crawling noise as the fan sweeps. Only
+    # two of sixteen pixels are lit; the rest remain genuinely transparent.
+    for py in range(top, bottom):
+        for px in range(left + (-(left + py) % 4), right, 4):
+            if py % 2 == 0 and inside[px, py]:
+                pixels[px, py] = (244, 221, 160, 255)
+    d = ImageDraw.Draw(image)
+    d.line((vertices[1], vertices[0], vertices[2]), fill=BEAM_SHADE)
+    # A short bright center at the lantern keeps the emission point readable.
+    d.line((vertices[0], (x + round(reach * 0.12), y + round((tip_y - y) * 0.12))), fill=GOLD)
+
+
 class Animator:
     def __init__(self, scene: Scene, config: Config) -> None:
         self.scene, self.config = scene, config
@@ -85,6 +123,8 @@ class Animator:
         t %= 1
         image = Image.new("RGBA", (WIDTH, HEIGHT))
         d = ImageDraw.Draw(image)
+        if self.config.lighthouse_beam:
+            lighthouse_beam(image, t)
         image.alpha_composite(self.lights[int(math.sin(TAU * t * 2) > -0.55)], (17, 27))
         for j, (x, y) in enumerate(((15, 106), (51, 105))):
             p = (t * 2 + j * 0.5) % 1

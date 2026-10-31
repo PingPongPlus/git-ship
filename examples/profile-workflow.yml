@@ -1,5 +1,5 @@
 # Copy to .github/workflows/git-ship.yml in YOUR_USERNAME/YOUR_USERNAME.
-# Feature branch; pin a reviewed full commit SHA for a stable installation.
+# Pin a reviewed full commit SHA for a stable installation.
 name: Git Ship
 on:
   schedule:
@@ -33,13 +33,14 @@ jobs:
           persist-credentials: false
       - name: Generate fleet
         id: ship
-        uses: PingPongPlus/git-ship@shipinclude1year
+        uses: PingPongPlus/git-ship@main
         with:
           username: ${{ github.repository_owner }}
           output-dir: git-ship-output
           token: ${{ github.token }}
           # Scheduled default: repository variable GIT_SHIP_DATA_WINDOW, or month.
           data-window: ${{ inputs.period || vars.GIT_SHIP_DATA_WINDOW || 'month' }}
+          # lighthouse-beam: 'false' # Optional: disable the rotating ray.
           # config: .github/git-ship.toml
       - name: Publish only images to output branch
         env:

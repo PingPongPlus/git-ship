@@ -187,7 +187,9 @@ class GitHubClient:
         start, end = commit_window(observed, config.activity_window)
         query = urlencode(
             {
-                "author": profile.username,
+                # GitHub's server-side author filter can miss commits using a
+                # previous username's noreply address even when author.login
+                # resolves to this account. Check the returned account below.
                 "since": start.isoformat(),
                 "until": end.isoformat(),
                 "per_page": 100,

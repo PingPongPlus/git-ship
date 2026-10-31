@@ -4,13 +4,14 @@
   "frames": 100,
   "fps": 10,
   "duration_seconds": 10.0,
-  "gif_bytes": 769322,
-  "min_transparent_fraction": 0.854453125,
-  "max_transparent_fraction": 0.857921875,
+  "gif_bytes": 825266,
+  "min_transparent_fraction": 0.83490625,
+  "max_transparent_fraction": 0.857734375,
   "decoded_frames_match": true,
   "activity_window_days": 30,
   "layout_seed": "demo",
-  "png_bytes": 5008,
+  "lighthouse_beam": true,
+  "png_bytes": 6495,
   "languages": [
     {
       "name": "Java",
@@ -18,6 +19,8 @@
       "code_share": 0.285714,
       "activity": 0.95,
       "width": 53,
+      "x": 329,
+      "y": 8,
       "cargo": 7
     },
     {
@@ -26,6 +29,8 @@
       "code_share": 0.25,
       "activity": 0.95,
       "width": 52,
+      "x": 227,
+      "y": 77,
       "cargo": 20
     },
     {
@@ -34,6 +39,8 @@
       "code_share": 0.214286,
       "activity": 0.683333,
       "width": 51,
+      "x": 91,
+      "y": 44,
       "cargo": 6
     },
     {
@@ -42,6 +49,8 @@
       "code_share": 0.142857,
       "activity": 0.45,
       "width": 50,
+      "x": 254,
+      "y": 6,
       "cargo": 4
     },
     {
@@ -50,6 +59,8 @@
       "code_share": 0.071429,
       "activity": 0.883333,
       "width": 48,
+      "x": 162,
+      "y": 29,
       "cargo": 5
     },
     {
@@ -58,6 +69,8 @@
       "code_share": 0.035714,
       "activity": 0.916667,
       "width": 47,
+      "x": 300,
+      "y": 89,
       "cargo": 2
     }
   ]

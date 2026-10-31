@@ -36,6 +36,12 @@ def parser() -> argparse.ArgumentParser:
     )
     render.add_argument("--observation-date", help="fixed UTC observation date, YYYY-MM-DD")
     render.add_argument("--seed")
+    render.add_argument(
+        "--lighthouse-beam",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="enable or disable the rotating lighthouse ray",
+    )
     window = render.add_mutually_exclusive_group()
     window.add_argument("--activity-window", type=int, help="rolling activity window in days")
     presets = ", ".join(f"{name} ({days})" for name, days in DATA_WINDOWS.items())
@@ -58,6 +64,7 @@ def main(argv: list[str] | None = None) -> int:
             "duration",
             "activity_window",
             "seed",
+            "lighthouse_beam",
             "observation_date",
         )
         overrides = {k: getattr(args, k) for k in keys}

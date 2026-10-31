@@ -1,3 +1,4 @@
+import random
 from dataclasses import replace
 from datetime import UTC, datetime
 from itertools import combinations
@@ -8,7 +9,7 @@ from git_ship.animation import Animator
 from git_ship.config import HEIGHT, MAX_SHIPS, WIDTH, Config
 from git_ship.export import export
 from git_ship.github import GitHubClient
-from git_ship.layout import layout
+from git_ship.layout import layout, placements
 from git_ship.model import Commit, Profile, Repository
 
 NAMES = ("Java", "C++", "Python", "Rust", "JavaScript", "TypeScript", "Go", "Ruby")
@@ -106,6 +107,29 @@ def test_explicit_seed_is_repeatable_and_not_rechosen_for_animation_frames(demo,
     animator = Animator(scene, config)
     assert animator.frame(0).tobytes() == animator.frame(1).tobytes()
     assert animator.frame(0.5).tobytes() == animator.frame(0.5).tobytes()
+
+
+def test_placements_use_the_whole_sea_instead_of_fixed_rows(demo):
+    positions = [layout(demo, Config(ships=1, seed=i)).ships[0] for i in range(50)]
+    assert max(ship.x for ship in positions) - min(ship.x for ship in positions) > 200
+    assert max(ship.y for ship in positions) - min(ship.y for ship in positions) > 70
+    assert len({ship.y for ship in positions}) > 20
+
+
+def test_dense_fallback_fits_six_maximum_width_motion_envelopes():
+    class CrowdedRandom(random.Random):
+        def randint(self, a, b):
+            # Force every free-placement retry to collide at the same corner.
+            return a
+
+    positions = placements([62] * 6, CrowdedRandom(42))
+    boxes = [(x - 8, y - 2, x + 70, y + 63) for x, y in positions]
+    assert len(boxes) == 6
+    for left, top, right, bottom in boxes:
+        assert 70 < left < right < WIDTH
+        assert 0 <= top < bottom < HEIGHT
+    for a, b in combinations(boxes, 2):
+        assert a[2] < b[0] or b[2] < a[0] or a[3] < b[1] or b[3] < a[1]
 
 
 @pytest.mark.parametrize("count", range(7))

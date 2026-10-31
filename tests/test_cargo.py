@@ -154,7 +154,7 @@ def test_live_cargo_follows_commit_pages_filters_authors_and_deduplicates(monkey
             return [item(1), item(2), item(3, "other")], {}
         if "/commits?" in path:
             query = parse_qs(urlparse(path).query)
-            assert query["author"] == ["sailor"]
+            assert "author" not in query
             assert datetime.fromisoformat(query["until"][0]) == observed
             return [item(1)], {
                 "link": '<https://api.github.com/repos/sailor/one/commits?page=2>; rel="next"'
@@ -171,6 +171,37 @@ def test_live_cargo_follows_commit_pages_filters_authors_and_deduplicates(monkey
         2,
     ]
     assert len([path for path in calls if "/commits/" in path]) == 2
+
+
+def test_renamed_account_commits_are_not_lost_to_github_author_filter(monkeypatch):
+    client = GitHubClient()
+    observed = datetime(2026, 10, 1, 3, 23, tzinfo=UTC)
+    repo = Repository("one", "sailor", False, False, None, {"Java": 100})
+    profile = Profile("sailor", observed.date(), (repo,), observed_at=observed.isoformat())
+
+    def request(path, body=None):
+        if "/commits?" in path:
+            # Reproduce GitHub returning only current-address commits when
+            # author=username is supplied, despite resolving old addresses to
+            # the same author.login in the unfiltered response.
+            records = [
+                {
+                    "sha": f"{i:040x}",
+                    "author": {"login": "sailor" if i < 9 else "someone-else"},
+                    "commit": {
+                        "author": {"email": "123+previous-name@users.noreply.github.com"},
+                        "committer": {"date": "2026-09-30T18:00:00Z"},
+                    },
+                }
+                for i in range(1, 10)
+            ]
+            return (records[:3] if "author" in parse_qs(urlparse(path).query) else records), {}
+        sha = path.split("/commits/")[1].split("?")[0]
+        return {"sha": sha, "files": [{"filename": "src/Example.java"}]}, {}
+
+    monkeypatch.setattr(client, "request", request)
+    loaded = replace(profile, repositories=client.load_cargo(profile, Config(), observed))
+    assert rank_languages(loaded, Config())[0].cargo == 8
 
 
 def test_live_scan_stops_at_twenty_cargos_without_requesting_more_pages(monkeypatch):

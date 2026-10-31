@@ -107,6 +107,7 @@ def export(
         report = verify_gif(gif_path, frames, config)
         report["activity_window_days"] = config.activity_window
         report["layout_seed"] = scene.layout_seed
+        report["lighthouse_beam"] = config.lighthouse_beam
         frames[0].save(root / "git-ship.png")
         report["png_bytes"] = (root / "git-ship.png").stat().st_size
         report["languages"] = [
@@ -116,6 +117,8 @@ def export(
                 "code_share": round(s.language.share, 6),
                 "activity": round(s.language.activity, 6),
                 "width": s.width,
+                "x": s.x,
+                "y": s.y,
                 "cargo": s.language.cargo,
             }
             for s in scene.ships

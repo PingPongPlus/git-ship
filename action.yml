@@ -25,6 +25,10 @@ inputs:
     description: Built-in GitHub token for public data; never saved with the assets
     required: false
     default: ${{ github.token }}
+  lighthouse-beam:
+    description: Enable the rotating lighthouse ray; empty uses config (enabled by default)
+    required: false
+    default: ''
   demo:
     description: Render the bundled fixture entirely offline (for smoke tests)
     required: false
@@ -57,6 +61,7 @@ runs:
         SHIP_OUTPUT_DIR: ${{ inputs.output-dir }}
         SHIP_CONFIG: ${{ inputs.config }}
         SHIP_DATA_WINDOW: ${{ inputs.data-window }}
+        SHIP_LIGHTHOUSE_BEAM: ${{ inputs.lighthouse-beam }}
         SHIP_DEMO: ${{ inputs.demo }}
         SHIP_REPOSITORY_OWNER: ${{ github.repository_owner }}
         GITHUB_TOKEN: ${{ inputs.token }}

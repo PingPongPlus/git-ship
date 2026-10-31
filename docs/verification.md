@@ -3,11 +3,10 @@
 Local verification: **2026-10-31**, macOS arm64, Python **3.15.0**, Pillow **13.0.0**.
 CI covers Python **3.11/3.15** and runs the root composite action with Python **3.13**.
 The public destination is [PingPongPlus/git-ship](https://github.com/PingPongPlus/git-ship).
-The recorded checks below cover the `dynamic-ships` baseline (`4b01e6d`). The
-`shipinclude1year` branch adds a rolling 365-day preset; that new preset is not
-covered by these recorded checks. The default branch is unchanged. No `v1` or
-Marketplace release is claimed. Hosted results are available under the
-repository's Actions tab.
+This revision targets `main` and retains the rolling 365-day preset. It fixes
+renamed-account commit attribution, samples ship positions across the sea, and
+adds a configurable rotating lighthouse ray. No `v1` or Marketplace release is
+claimed. Hosted results are available under the repository's Actions tab.
 
 ## Commands and results
 
@@ -18,14 +17,15 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **78 passed**, with no live API required. |
+| `pytest -q` | **92 passed** in 5.43 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
 | `python scripts/sprite_atlas.py` | Generated the six-language transparent sprite atlas, including 20 C++ containers. |
 | `git-ship render --demo --seed demo --preview --output-dir examples/demo` | Generated and audited the full six-ship GIF/PNG, preview and contact sheet. |
-| Dynamic layout tests | Checked quiet/unknown language filtering, active-language discovery below inactive candidates, the six-ship maximum, new layouts per render and exact seed replay. |
+| Dynamic layout tests | Check quiet/unknown language filtering, active-language discovery below inactive candidates, the six-ship maximum, placement across the sea, new layouts per render and exact seed replay. |
 | Full motion-envelope tests | Checked 140 scenes: zero through six fully loaded ships across 20 seeds each; all envelopes remain inside the canvas and disjoint. |
+| Dense packing fallback test | Forced the guaranteed-fit path with six maximum-width 62-pixel ships; all full motion envelopes remain inside the canvas and disjoint. |
 | Fixture time-window tests | Day has no ships; week has JAVA/C++/JS/TS with cargo `[4,6,3,2]`; month has all six with cargo `[7,20,6,4,5,2]`. |
 | Ruby `YAML.load_file` on action, CI, caller workflow and Dependabot | All four files parsed successfully. |
 | Read-only GitHub CLI repository inspection | Destination verified **PUBLIC**, initially with no branch history. |
@@ -46,6 +46,10 @@ Ordinary tests never depend on GitHub availability or write to a remote service.
   qualifying languages means a lighthouse-only scene.
 - Only selected public, owned repository/default-branch history is queried. Primary
   authors, UTC committer timestamps, deletes and renames are handled explicitly.
+- Author identity is checked from returned `author.login` values. The server-side
+  `author=username` query is intentionally omitted: it can exclude old noreply
+  addresses after an account rename, even when the response resolves those
+  commits to the current account. Other users' commits remain excluded.
 - Live periods are rolling 24-hour, 7-day, 30-day or 365-day windows. Tests at 03:23 UTC include
   yesterday's eligible commits, exclude the exact start boundary and future commits,
   and verify the same interval is passed to the optional contribution query.
@@ -65,9 +69,42 @@ Ordinary tests never depend on GitHub availability or write to a remote service.
 - Funnel-to-deck continuity and six-character label clearance are checked across all
   supported widths. JavaScript and TypeScript follow the same pipeline as the other
   demo languages. Cargo occludes smoke drifting behind it.
-- Each regeneration selects and jitters six safe areas using a fresh seed chosen
-  once. Positions remain fixed through the loop. An explicit `--seed` makes the
-  complete scene repeatable, and the report records `layout_seed` for replay.
+- Each regeneration samples the available sea using a fresh seed chosen once.
+  Full motion envelopes remain disjoint and inside the canvas. Bounded retries
+  fall back to randomized column widths and independent vertical splits when a
+  dense fleet needs a guaranteed fit. Positions remain fixed through the loop.
+  An explicit `--seed` makes the complete scene repeatable; the report records
+  `layout_seed`, coordinates and the ray setting.
+
+## Renamed-account undercount investigation
+
+The successful profile run before this fix reported `activity_window_days: 365`
+and Java cargo **3**, establishing an actual data undercount rather than an
+incorrect selected window. A read-only comparison against public Air-Client
+history found that `author=PingPongPlus` returned five commits using the current
+address, while the unfiltered history included many commits using the old
+`pingminus` noreply address with the same linked `author.login: PingPongPlus`.
+The fix removes only that server-side author query. The local linked-author,
+timestamp, language and SHA checks still apply. A regression fixture reproduces
+the dropped old-address records and also verifies that another account's commit
+does not count.
+
+A fresh authenticated public-profile fetch after the fix completed in **292
+requests** with no warnings. In the same 365-day window it produced Java cargo
+**20**, C++ **20**, Python **5**, TypeScript **6**, JavaScript **8**, and GLSL
+**20**. The Java result confirms the change from three to the visual cap; twenty
+represents at least twenty qualifying distinct commits, not an exact total above
+the cap. This audit read live data; ordinary tests remain offline.
+
+## Lighthouse ray contracts
+
+The ray originates at the lantern and rotates once per loop, changing projected
+length, tilt and fan width. Sparse warm pixels and stepped outlines preserve
+binary alpha, and every existing opaque ship/lighthouse/wave pixel takes
+precedence. Tests cover its exact loop, changing projection, disable setting and
+exact decoded GIF cleanup. `lighthouse_beam = false`, `--no-lighthouse-beam`, or
+the action input `lighthouse-beam: 'false'` disables the ray while retaining the
+lantern blink. The default is enabled.
 
 ## Action and publishing contracts
 
@@ -97,9 +134,10 @@ Fixture: `src/git_ship/assets/demo.json`, observed on **2026-10-01**.
 | Timing | **100 frames, 10 fps, 100 ms/frame, 10 seconds** |
 | Loop | Infinite; no extra closing-frame hold |
 | Layout seed | `demo` |
-| GIF | **769,322 bytes**, below 2 MB target |
-| PNG | **5,008 bytes**, genuine RGBA |
-| Fully transparent pixels over every frame | **85.4453125%–85.7921875%** |
+| Lighthouse ray | Enabled |
+| GIF | **825,266 bytes**, below 2 MB target |
+| PNG | **6,495 bytes**, genuine RGBA |
+| Fully transparent pixels over every frame | **83.490625%–85.7734375%** |
 | Alpha / palette / disposal | Binary alpha, one shared palette, transparent index 0, disposal 2 |
 | Decoded comparison | All 100 frames exactly match intended alpha and visible RGB |
 | Cargo, in report order | JAVA 7 / C++ 20 / PYTHON 6 / RUST 4 / JS 5 / TS 2 |
@@ -111,7 +149,7 @@ Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 The approved reference, still compositions and light/dark contact sheets were
 inspected during implementation. The initial animation and smoke/wake revision were
 also inspected in browser playback on both backgrounds. This revision's six
-ships, twenty-container stack, readable labels and smoke clearance were inspected in the
+ships, free placement, sweeping ray, twenty-container stack, readable labels and smoke clearance were inspected in the
 regenerated art/contact sheet. Every exported revision is audited after decoding;
 no trails or matte rectangles are accepted. Exact periodicity and seam-step size are
 also covered by tests. Rendering twice with an explicit seed is checked for

@@ -7,9 +7,9 @@ A little lighthouse for you. A cargo fleet for your languages. Your GitHub READM
   <img src="examples/demo/git-ship.gif" width="800" alt="A lighthouse beside six active-language pixel ships carrying commit cargo over small foamy wakes.">
 </picture>
 
-Git Ship is an open-source **reusable GitHub Action** and Python CLI for anyone's profile. It fetches your public repository data and generates a transparent animated GIF plus a matching static PNG. **Only languages with qualifying commits appear: up to six ships, with one container per commit and at most 20 containers per ship.** Each regeneration picks fresh random placements; positions remain fixed within the seamless animation loop. Regenerate automatically every day and choose a **1-day, 7-day, 30-day, or 365-day** activity window. No hosted application, external image service, or personal access token is needed for the normal setup.
+Git Ship is an open-source **reusable GitHub Action** and Python CLI for anyone's profile. It fetches your public repository data and generates a transparent animated GIF plus a matching static PNG. **Only languages with qualifying commits appear: up to six ships, with one container per commit and at most 20 containers per ship.** Each regeneration picks fresh positions across the sea; positions remain fixed within the seamless animation loop. An optional rotating lighthouse ray adds a sweeping warm light behind the fleet. Regenerate automatically every day and choose a **1-day, 7-day, 30-day, or 365-day** activity window. No hosted application, external image service, or personal access token is needed for the normal setup.
 
-This is the **`shipinclude1year` feature branch**. Use `PingPongPlus/git-ship@shipinclude1year`, or pin its commit SHA, to opt into these changes. The default branch remains unchanged.
+Use `PingPongPlus/git-ship@main` for the current source action, or pin a reviewed full commit SHA for a stable installation.
 
 ## Set up daily updates with GitHub Actions
 
@@ -51,7 +51,7 @@ jobs:
           persist-credentials: false
       - name: Generate fleet
         id: ship
-        uses: PingPongPlus/git-ship@shipinclude1year
+        uses: PingPongPlus/git-ship@main
         with:
           username: ${{ github.repository_owner }}
           output-dir: git-ship-output
@@ -71,7 +71,7 @@ jobs:
             --default-branch "$SHIP_DEFAULT_BRANCH"
 ```
 
-`shipinclude1year` tracks this feature's development. For a stable installation, replace the branch ref with a reviewed full commit SHA. No `v1` release tag or Marketplace release is claimed yet. Nothing is hard-coded to the project's owner: the example uses **your** repository owner, your workflow token, and your repository's output branch.
+`main` follows project updates. For a stable installation, replace the branch ref with a reviewed full commit SHA. No `v1` release tag or Marketplace release is claimed yet. Nothing is hard-coded to the project's owner: the example uses **your** repository owner, your workflow token, and your repository's output branch.
 
 ### Choose your data window
 
@@ -118,6 +118,7 @@ Browsers that support the media query animate only with no reduced-motion prefer
 | --- | --- |
 | `username` | Explicit input → config username → caller repository owner |
 | `data-window` | `day`, `week`, `month`, or `year`; empty uses TOML `activity_window`, then 30 days |
+| `lighthouse-beam` | `true` or `false`; empty uses TOML `lighthouse_beam`, enabled by default |
 | `output-dir` | `git-ship-output`, a subdirectory inside the caller workspace |
 | `config` | Optional TOML path inside the caller workspace |
 | `token` | Built-in `${{ github.token }}`, supplied as `GITHUB_TOKEN` internally |
@@ -137,7 +138,7 @@ Git Ship uses [official repository and commit APIs](https://docs.github.com/en/r
 
 1. List public, owned, non-fork repositories; include archived repositories by default. Apply configured repository filters before fetching language bytes.
 2. Rank candidate languages by summed reported **byte counts**, with a case-insensitive language-name tie break. These are code shares, not coding time, skill, or authored lines. Filter out zero/unknown qualifying commit counts before applying the six-ship limit, so inactive high-byte languages cannot hide active languages farther down the ranking. Never invent filler ships.
-3. For the displayed languages, list **your authored commits on each repository's default branch**, filtered by username and the selected rolling window. Use the commit's **committer timestamp**, matching the REST history filter. Unmapped authors and commits by other users do not count. A co-author trailer by itself is not included by this primary-author filter. Merge commits count if returned as your authored commit and they affect a classified language.
+3. List default-branch history for the selected rolling window, then count **your authored commits** by each response's linked `author.login`. Filtering the returned account locally preserves commits made with an old username's noreply address; GitHub's server-side `author=username` filter can omit those even when they resolve to the same account. Use the commit's **committer timestamp**, matching the REST history filter. Unmapped authors and commits by other users do not count. A co-author trailer by itself is not included by this primary-author filter. Merge commits count if returned as your authored commit and they affect a classified language.
 4. Read every returned commit's changed-file pages. Assign filenames/extensions using vendored [GitHub Linguist metadata](https://github.com/github-linguist/linguist/blob/73ee9a3b277f398c37ca4ab0dea0193849de6460/lib/linguist/languages.yml), including named files, compound suffixes and language groups. Ambiguous extensions use the repository's largest reported candidate language. A `.C` → C++ override supports the conventional uppercase extension.
 5. **One distinct commit SHA per language = one container**, up to **20**. Editing five Python files in one commit still adds one Python container. A commit touching Python and JavaScript can add one container to each. The same SHA across selected repositories is deduplicated. Adds, edits, deletes and renames count; a language-changing rename can affect both the old and new language.
 
@@ -152,7 +153,7 @@ Fetching considers all candidate languages until it can determine the active fle
 Requires **Python 3.11+** and **Pillow 13.x**, the only runtime dependency. See [Pillow's supported Python versions](https://pillow.readthedocs.io/en/stable/installation/python-support.html). No PyPI release is claimed; install from this source:
 
 ```sh
-git clone --branch shipinclude1year https://github.com/PingPongPlus/git-ship.git
+git clone https://github.com/PingPongPlus/git-ship.git
 cd git-ship
 python3 -m venv .venv # Select a Python 3.11+ interpreter.
 source .venv/bin/activate
@@ -164,6 +165,7 @@ git-ship render --demo --preview --output-dir out
 git-ship render --username YOUR_USERNAME --data-window day --output-dir out
 git-ship render --username YOUR_USERNAME --data-window week --output-dir out
 git-ship render --username YOUR_USERNAME --data-window month --output-dir out
+git-ship render --username YOUR_USERNAME --data-window year --output-dir out
 git-ship render --config examples/config.toml --output-dir out
 git-ship render --username YOUR_USERNAME --cache-profile out/profile.json --output-dir out
 git-ship render --profile out/profile.json --output-dir out/offline
@@ -177,7 +179,7 @@ Open `out/preview.html` directly or serve it with `python -m http.server 8000` a
 | --- | --- |
 | `git-ship.gif` | Transparent endlessly looping animation |
 | `git-ship.png` | Transparent static frame zero |
-| `report.json` | Dimensions, timing, size, transparency, window days, cargo counts and replayable layout seed |
+| `report.json` | Dimensions, timing, size, transparency, window days, beam setting, ship positions, cargo counts and replayable layout seed |
 | `preview.html` | Optional light/dark playback and pause control |
 | `contact-sheet.png` | Optional four-time-point verification sheet |
 
@@ -196,6 +198,7 @@ Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/au
 | `fps` | 10 | 5, 10, 20 or 25, all exact GIF centiseconds |
 | `duration` | 10 | Integer seconds, 2–20; at most 300 frames |
 | `seed` | fresh random value | Optional string/integer to reproduce placement; omit for new positions on each run |
+| `lighthouse_beam` | true | Rotating lighthouse ray; set false to disable |
 | `observation_date` | current instant live | ISO/TOML date; override uses end of that UTC date; offline uses its fixture instant/date |
 | `include_forks` | false | Include owned public forks when explicitly enabled |
 | `include_archived` | true | Archived code contributes by default |
@@ -204,7 +207,9 @@ Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/au
 | `[labels]` | language mapping | 1–6 uppercase letters/digits or `+ # space . -` |
 | `[colors]` | language mapping | `#RRGGBB`; bright colors become trim with a darkened hull |
 
-Abbreviations include JS, TS, IPYNB, and OBJ-C. Unknown names use an uppercase ASCII approximation truncated to six characters; configure labels to avoid collisions. Full language names remain in the report. Unknown languages receive deterministic design/color variants. An inactive window keeps the lighthouse and localized ripples, with no idle ships. Total export workload is capped at **80 million frame-pixels** before allocation; not every otherwise-valid scale/fps/duration combination fits. RGBA, indexed and verification frames make peak memory several times the pixel count.
+To disable the ray, add `lighthouse-beam: 'false'` under the action's `with:` block, set `lighthouse_beam = false` in TOML, or pass `--no-lighthouse-beam` to the CLI. Use `--lighthouse-beam` to enable it explicitly. The setting does not change cargo counts or ship placement.
+
+Abbreviations include JS, TS, IPYNB, and OBJ-C. Unknown names use an uppercase ASCII approximation truncated to six characters; configure labels to avoid collisions. Full language names remain in the report. Unknown languages receive deterministic design/color variants. An inactive window keeps the lighthouse, its optional ray and localized ripples, with no idle ships. Total export workload is capped at **80 million frame-pixels** before allocation; not every otherwise-valid scale/fps/duration combination fits. RGBA, indexed and verification frames make peak memory several times the pixel count.
 
 ## Exact activity and animation formulas
 
@@ -214,7 +219,9 @@ For language `L`, `B[L] = sum(selected_repo_bytes[L])`, and `share[L] = B[L]/sum
 
 The optional [GraphQL contribution calendar](https://docs.github.com/en/graphql/reference/users#contributionscollection) is requested for the same chosen interval. GitHub defines its contribution types, daily calendar aggregation and token visibility; it is not a precise per-language commit counter. Clamp `energy = min(total,1000)/1000`; unavailable totals stay null and use energy zero with a warning. Language bytes are not time-windowed.
 
-The canvas contains six safe areas in three columns and two rows to the right of the lighthouse. Each render samples areas without replacement and jitters the ships inside them, reserving the full wake/drift/bob/smoke envelope. Hull width is `min(round(44 + 16*sqrt(share)), 62)`, so names and cargo stay readable even with six ships. A fresh random seed is chosen **once per render**, never per frame. `report.json` stores `layout_seed`; pass it back through `--seed` with the same profile/config to reproduce the GIF. The demo artifacts use `--seed demo`. Refreshing a README replays its existing GIF; a new workflow run generates the new placement.
+Each render samples positions throughout the sea to the right of the lighthouse, rejecting placements whose full wake/drift/bob/smoke envelopes overlap or leave the canvas. Bounded retries keep layout work finite; dense fleets fall back to randomized column widths and independent vertical splits that guarantee room. Hull width is `min(round(44 + 16*sqrt(share)), 62)`, so names and cargo stay readable even with six ships. A fresh random seed is chosen **once per render**, never per frame. `report.json` stores `layout_seed` and ship coordinates; pass the seed back through `--seed` with the same profile/config to reproduce the GIF. The demo artifacts use `--seed demo`. Refreshing a README replays its existing GIF; a new workflow run generates the new placement.
+
+The lighthouse ray rotates once per loop. Its projected length, tilt and fan width change as it turns toward and away from the viewer. Warm stepped outlines and sparse fixed-pattern pixels form the cone while the surrounding sea remains transparent. It is drawn behind every ship, wave and lighthouse pixel, keeping labels and cargo intact. Disabling it retains the lantern's normal blink.
 
 For normalized loop time `t` and stable phase `p`, horizontal drift is `round((2.5 + 1.5*activity)*sin(2π(t+p)))`; bob is `round((1.2 + 0.8*energy)*sin(4π(t+p)))`. Names and cargo move with the same sprite. Boats face right while surging and easing astern in their small mooring area; there is no offscreen wrap or teleport.
 
@@ -222,7 +229,7 @@ Three blue/white wake clusters cycle three times per loop, visible for phases 0.
 
 PNG has real binary RGBA alpha. GIF uses one exact shared palette, transparency index **0**, full-frame image blocks and **disposal 2**, with optimization disabled. No matte, quantization, antialiasing, filled sea/sky or checkerboard is drawn. Pillow's public GIF block helpers preserve identical adjacent frames in quiet scenes. Every saved GIF frame is decoded and compared against intended alpha and visible RGB, including vacated pixels, before images replace existing assets. See [Pillow's GIF options](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif).
 
-Current six-ship demo: **800×320**, **100 frames**, **10 fps**, **10 seconds**, **769,322 GIF bytes**; PNG **5,008 bytes**. Every frame is **85.45–85.79% fully transparent**. Sizes may change with source/palette/Pillow versions; `report.json` records actual measurements. The 2 MB target is a warning threshold, not a reason to hide names or cargo. 800 px is recommended; 400 px is the compact proof.
+Current six-ship demo with the ray enabled: **800×320**, **100 frames**, **10 fps**, **10 seconds**, **825,266 GIF bytes**; PNG **6,495 bytes**. Every frame is **83.49–85.77% fully transparent**. Sizes may change with source/palette/Pillow versions; `report.json` records actual measurements. The 2 MB target is a warning threshold, not a reason to hide names or cargo. 800 px is recommended; 400 px is the compact proof.
 
 ## Develop, test and inspect
 
@@ -236,7 +243,7 @@ python scripts/sprite_atlas.py
 git-ship render --demo --seed demo --preview --output-dir examples/demo
 ```
 
-Ordinary tests use fixtures and local temporary Git repositories, with no live API or push requirement. They cover active-language discovery below inactive candidates, six-ship limits, randomized/replayable layouts, disjoint full motion envelopes across many seeds, the 20-container cap, file/commit pagination, author filtering, SHA deduplication, time windows, unknown caches, cargo/label clearance, loop continuity, exact decoded cleanup, offline CLI/action execution, and isolated output-branch publishing. CI runs on pushes and pull requests with Python 3.11/3.15, lint, tests, package build and an offline render. A separate job invokes the actual local root composite action with `uses: ./` and a selected data window. CI does not publish images or releases. Dependabot checks Actions and Python dependencies monthly. Actions currently use v7 major refs; pin immutable SHAs if required by your policy.
+Ordinary tests use fixtures and local temporary Git repositories, with no live API or push requirement. They cover active-language discovery below inactive candidates, six-ship limits, randomized/replayable layouts across the sea, disjoint full motion envelopes across many seeds, the 20-container cap, file/commit pagination, renamed-account author attribution, SHA deduplication, time windows, unknown caches, cargo/label clearance, beam rotation and its disable setting, loop continuity, exact decoded cleanup, offline CLI/action execution, and isolated output-branch publishing. CI runs on pushes and pull requests with Python 3.11/3.15, lint, tests, package build and an offline render. A separate job invokes the actual local root composite action with `uses: ./` and a selected data window. CI does not publish images or releases. Dependabot checks Actions and Python dependencies monthly. Actions currently use v7 major refs; pin immutable SHAs if required by your policy.
 
 Editable artwork is documented in [artwork/README.md](artwork/README.md). The renderer separates fetching (`github.py`), normalization/ranking (`model.py`), filename attribution (`languages.py`), validation (`config.py`), safe layout (`layout.py`), pixel art (`sprites.py`, `font.py`), animation (`animation.py`), export/audit (`export.py`) and local proof (`preview.py`). `scripts/run_action.py` runs the same CLI for any caller; `scripts/publish_assets.py` is optional and separate.
 
@@ -255,6 +262,7 @@ The [approved reference](references/concept-transparent.png) and [original brief
 | Missing/stale image | Run manually, inspect `output`, check both URL username segments, and allow for GitHub's image proxy cache. |
 | Few/no ships | Only languages with qualifying commits in the selected period appear. If none qualify, only the lighthouse remains. Unknown cached activity is hidden. |
 | Small cargo | The period includes only your default-branch authored commits with matching file-language classification. Twenty is the visual cap. |
+| Older username's commits missing | Update the workflow's action ref to a current revision and regenerate. Commit identity is checked from linked `author.login`, including old noreply addresses. |
 | Unknown cached cargo | Fetch a fresh profile for the chosen window/fleet. Old caches do not contain commit data. |
 
 No private-repository rendering, full Linguist content engine, release decorations, hosted service, APNG/SVG export or automatic account-permission changes are included. Network/5xx errors retry up to three attempts with 1/2-second waits and 30-second request timeouts; limits fail promptly. Failures never silently replace live data with stale cache. This source-based action is usable by public callers; tagging a versioned release and publishing a Marketplace listing are separate steps.

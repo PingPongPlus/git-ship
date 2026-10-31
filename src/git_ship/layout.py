@@ -1,4 +1,4 @@
-"""Fresh per-render placements within six non-overlapping motion envelopes."""
+"""Fresh free-position layouts with non-overlapping full motion envelopes."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import random
 import secrets
 from dataclasses import dataclass
 
-from .config import WIDTH, Config
+from .config import HEIGHT, WIDTH, Config
 from .model import Language, Profile, global_activity, rank_languages
 from .sprites import Style, language_style, stable_seed
 
@@ -32,6 +32,53 @@ class Scene:
     layout_seed: str = ""
 
 
+def placements(widths: list[int], rng: random.Random) -> list[tuple[int, int]]:
+    """Sample the entire sea, retrying bounded packs before a guaranteed fit."""
+    if not widths:
+        return []
+
+    def separated(a: tuple[int, ...], b: tuple[int, ...]) -> bool:
+        return a[2] < b[0] or b[2] < a[0] or a[3] < b[1] or b[3] < a[1]
+
+    for _ in range(96):
+        positions: dict[int, tuple[int, int]] = {}
+        boxes: list[tuple[int, ...]] = []
+        order = list(range(len(widths)))
+        rng.shuffle(order)
+        for index in order:
+            width = widths[index]
+            for _ in range(160):
+                x = rng.randint(82, WIDTH - width - 9)
+                y = rng.randint(2, HEIGHT - 64)
+                box = (x - 8, y - 2, x + width + 8, y + 63)
+                if all(separated(box, other) for other in boxes):
+                    positions[index] = (x, y)
+                    boxes.append(box)
+                    break
+            else:
+                break
+        if len(positions) == len(widths):
+            return [positions[index] for index in range(len(widths))]
+
+    # Dense fleets can fragment free space. Random-width columns and independent
+    # vertical splits guarantee a fit without shrinking sprites or overlapping.
+    minimum = max(widths) + 18
+    extra = WIDTH - 76 - 3 * minimum
+    cuts = sorted((0, rng.randrange(extra + 1), rng.randrange(extra + 1), extra))
+    columns = [minimum + cuts[i + 1] - cuts[i] for i in range(3)]
+    rng.shuffle(columns)
+    cells = [(column, row) for column in range(3) for row in range(2)]
+    rng.shuffle(cells)
+    splits = [rng.randint(68, 90) for _ in range(3)]
+    result = []
+    for width, (column, row) in zip(widths, cells, strict=False):
+        left = 74 + sum(columns[:column])
+        x = rng.randint(left + 8, left + columns[column] - width - 10)
+        y = rng.randint(2, splits[column] - 64) if row == 0 else rng.randint(splits[column] + 4, 96)
+        result.append((x, y))
+    return result
+
+
 def layout(profile: Profile, config: Config) -> Scene:
     # Filter before limiting: an inactive high-byte language must never hide an
     # active language farther down the ranking. Unknown commit data is hidden.
@@ -42,16 +89,10 @@ def layout(profile: Profile, config: Config) -> Scene:
     layout_seed = str(config.seed) if config.seed is not None else secrets.token_hex(16)
     rng = random.Random(stable_seed(layout_seed))
     identity = profile.username.casefold()
-    # Two rows leave room for the full 56-pixel sprite, wake, bob and smoke.
-    # Three wide columns preserve native lettering and cargo at six ships.
-    cells = rng.sample([(column, row) for row in range(2) for column in range(3)], len(languages))
-    column_width = (WIDTH - 86) / 3
+    widths = [min(round(44 + 16 * math.sqrt(language.share)), 62) for language in languages]
+    positions = placements(widths, rng)
     ships = []
-    for language, (column, row) in zip(languages, cells, strict=True):
-        width = min(round(44 + 16 * math.sqrt(language.share)), 62)
-        left = 80 + column * column_width
-        x = rng.randint(math.ceil(left + 8), math.floor(left + column_width - width - 8))
-        y = (9 if row == 0 else 83) + rng.randrange(6)
+    for language, width, (x, y) in zip(languages, widths, positions, strict=True):
         phase = (stable_seed(f"{identity}:{language.name}") % 1024) / 1024
         ships.append(
             Ship(
