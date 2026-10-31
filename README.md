@@ -1,6 +1,6 @@
 # Git Ship
 
-A little lighthouse for you. A cargo fleet for your languages. Your GitHub README supplies the open sea.
+A little lighthouse for you. A cargo fleet for your languages. Your GitHub README supplies the open sea. Each container is a commit that was shipped big containers make out 4 commits!
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="examples/demo/git-ship.png">
