@@ -1,5 +1,6 @@
 from collections import Counter
 from dataclasses import replace
+from math import ceil
 
 import pytest
 
@@ -12,7 +13,7 @@ from git_ship.sprites import SHIP_DESIGNS, language_style, ship_sprite
 def test_each_language_can_use_every_existing_ship_design(demo):
     designs = {ship.language.name: set() for ship in layout(demo, Config(seed=0)).ships}
     # A language's data/color identity stays intact as its physical ship changes.
-    for seed in range(50):
+    for seed in range(128):
         for ship in layout(demo, Config(seed=seed)).ships:
             designs[ship.language.name].add(ship.style.design)
             base = language_style(ship.language.name, Config())
@@ -29,7 +30,7 @@ def test_fleet_uses_every_design_before_repeating_and_honors_custom_labels(demo)
     scene = layout(demo, config)
     chosen = [ship.style.design for ship in scene.ships]
     assert len(set(chosen[: len(SHIP_DESIGNS)])) == min(len(chosen), len(SHIP_DESIGNS))
-    assert max(Counter(chosen).values()) <= 2
+    assert max(Counter(chosen).values()) <= ceil(len(chosen) / len(SHIP_DESIGNS))
     java = next(ship for ship in scene.ships if ship.language.name == "Java")
     assert java.style.label == "CUSTOM" and java.style.hull == "#123456"
     assert java.language.cargo == 7

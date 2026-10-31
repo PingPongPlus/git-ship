@@ -138,6 +138,14 @@ class Animator:
                 wave(d, x + int(p * 2), y, 10 + int(3 * math.sin(math.pi * p)), int(p * 4) % 2)
         for ship, sprite in zip(self.scene.ships, self.sprites, strict=True):
             m = ship_motion(ship, t)
+            if ship.style.design == "trawler":
+                # The line pivots from the fixed boom tip; only the hanging
+                # hook sways. One cycle closes exactly at the animation seam.
+                amplitude = 1 if ship.width < 50 else 2
+                sway = round(amplitude * math.sin(TAU * (t + ship.phase)))
+                sprite = ship_sprite(
+                    ship.style, ship.width, ship.language.cargo or 0, hook_sway=sway
+                )
             # Periodic mooring motion, always the same heading: right-facing
             # boats surge forward and gently ease astern; never mirror names.
             for j in range(3):

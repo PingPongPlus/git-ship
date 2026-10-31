@@ -1,6 +1,6 @@
 The original editable artwork lives in the installed package:
 
-- `src/git_ship/sprites.py`: lighthouse, rocks, four ship designs, commit cargo, palette and art primitives.
+- `src/git_ship/sprites.py`: lighthouse, rocks, seven ship designs, commit cargo, palette and art primitives.
 - `src/git_ship/font.py`: original 5×7 bitmap glyphs, including `+`, `#`, spaces and hyphens.
 - `src/git_ship/assets/languages.json`: language colors and abbreviations; rendered ship type is assigned separately.
 - `src/git_ship/animation.py`: separate transient wakes, smoke, lantern states, rotating light ray and period watermark.
@@ -25,11 +25,23 @@ demo, use `--seed demo`; this fixes positions and types while keeping the loop
 periodic. The atlas uses the same seed for deterministic type assignments and
 remains independent of scene positions.
 
-The current production pool contains four existing shapes: steamship, tug,
-freighter and sailboat. A shuffled bag uses all four before any repeats, so a
-six-ship fleet has at most two of each. The type shuffle is derived separately
+The production pool contains seven shapes: steamship, tug, freighter, sailboat,
+ferry, fishing trawler and tanker. The ferry, trawler and tanker pixel art was
+approved before integration. Each render shuffles the pool and selects up to six
+types without replacement, keeping every visible type unique. The type shuffle is derived separately
 from the layout seed. It never changes a language's label, colors, custom
 configuration or commit count; shapes are not permanently assigned to languages.
+
+Approved reference PNGs are retained in [ship-designs](ship-designs/):
+`ferry-cargo-0.png`, `ferry-cargo-20.png`, `trawler-cargo-0.png`,
+`trawler-cargo-20.png`, `tanker-cargo-0.png` and `tanker-cargo-20.png`. The
+editable production versions live in `src/git_ship/sprites.py`.
+
+The trawler's rope and hook animate separately from the static hull. The rope
+starts at the fixed boom tip while the hook sways by one pixel on narrow hulls
+or two on wider ones, staying connected and repeating exactly over the loop.
+It is drawn before the lighthouse tint. Only the steamship and tug use smoke
+emitters; the smaller posts on the new designs are masts or vents.
 
 The optional lighthouse ray starts at the lantern and changes projected reach,
 tilt and fan width over one exact loop, creating the impression of a rotating

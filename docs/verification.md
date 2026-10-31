@@ -18,7 +18,7 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **124 passed** in 6.97 seconds, with no live API required. |
+| `pytest -q` | **149 passed** in 7.10 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
@@ -27,6 +27,7 @@ Commands were run from the project root with its `.venv` unless noted.
 | Dynamic layout tests | Check quiet/unknown language filtering, active-language discovery below inactive candidates, the six-ship maximum, placement across the sea, new layouts per render and exact seed replay. |
 | Full motion-envelope tests | Checked 140 scenes: zero through six fully loaded ships across 20 seeds each; all envelopes remain inside the canvas and disjoint. |
 | Dense packing fallback test | Forced the guaranteed-fit path with six maximum-width 62-pixel ships; all full motion envelopes remain inside the canvas and disjoint. |
+| Approved ship-art tests | 24 checks cover the ferry, trawler and tanker artwork and cargo configurations; a separate motion test checks the trawler's connected periodic hook. |
 | Fixture time-window tests | Day has no ships; week has JAVA/C++/JS/TS with cargo `[4,6,3,2]`; month has all six with cargo `[7,20,6,4,5,2]`. |
 | Ruby `YAML.load_file` on action, CI, caller workflow and Dependabot | All four files parsed successfully. |
 | Read-only GitHub CLI repository inspection | Destination verified **PUBLIC**, initially with no branch history. |
@@ -80,14 +81,26 @@ Ordinary tests never depend on GitHub availability or write to a remote service.
 
 ## Ship-type assignment contracts
 
-The production pool remains the four existing `steam`, `tug`, `freighter` and
-`sail` designs. Each render shuffles a bag of all four before any repeats; a
-six-ship scene has at most two of each design. The shuffle uses a separate random
+The production pool contains `steam`, `tug`, `freighter`, `sail`, `ferry`,
+`trawler` and `tanker`. The three new pixel-art designs were approved before
+integration. Each render shuffles the seven designs and selects up to six
+without replacement, so every visible ship type is unique. The shuffle uses a separate random
 stream derived from the layout seed, so an explicit seed replays both positions
 and types. Language labels, colors, custom label/color settings and commit cargo
 are preserved independently of shape. Each report language entry includes
 `design`. The sprite atlas uses the fixed `demo` seed for reproducible type
-assignments. No additional ship artwork is included in this production pool.
+assignments.
+
+The trawler's hook sways periodically by one logical pixel on narrow hulls or
+two on wider hulls, with the rope anchored to a fixed boom tip. The rope remains
+connected and the hook returns exactly at the loop boundary. It participates in
+the same lighthouse tint as the hull. The ferry, trawler and tanker add no smoke
+emitters; their smaller posts are masts or vents.
+
+Approved empty and twenty-container reference PNGs for each new design are
+retained under `artwork/ship-designs/`. The fixed demo seed selects tanker,
+trawler, freighter, sail, steam and tug; ferry remains available as the seventh
+registered design without increasing the six-ship scene limit.
 
 ## Renamed-account undercount investigation
 
@@ -163,22 +176,22 @@ Fixture: `src/git_ship/assets/demo.json`, observed on **2026-10-01**.
 | Layout seed | `demo` |
 | Lighthouse ray | Enabled |
 | Watermark | Enabled; `GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE` |
-| Ship designs, in report order | freighter / sail / steam / tug / freighter / steam |
-| GIF | **969,933 bytes**, below 2 MB target |
-| PNG | **6,567 bytes**, genuine RGBA |
-| Fully transparent pixels over every frame | **73.821875%–84.1171875%** |
+| Ship designs, in report order | tanker / trawler / freighter / sail / steam / tug |
+| GIF | **995,583 bytes**, below 2 MB target |
+| PNG | **6,944 bytes**, genuine RGBA |
+| Fully transparent pixels over every frame | **74.0328125%–83.978125%** |
 | Alpha / palette / disposal | Binary alpha, one shared palette, transparent index 0, disposal 2 |
 | Decoded comparison | All 100 frames exactly match intended alpha and visible RGB |
 | Cargo, in report order | JAVA 7 / C++ 20 / PYTHON 6 / RUST 4 / JS 5 / TS 2 |
 
 The solid ray intentionally occupies otherwise empty pixels while sweeping,
-reducing the demo's minimum transparency to about 73.82% with the watermark
+reducing the demo's minimum transparency to about 74.03% with the watermark
 enabled. Tests continue to require at least 80% transparency for the fleet with
 the ray disabled. With the
 ray enabled, exact binary alpha, palette colors and decoded cleanup remain
 verified. The regenerated contact sheet was inspected for readable Java, Rust
-and JavaScript artwork under the yellow tint and for clear header lettering that
-fits above the ships.
+and JavaScript artwork under the yellow tint, clear header lettering that fits
+above the ships, and the trawler's visible hook motion.
 
 Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 `contact-sheet.png`, `preview.html`, `examples/reduced-motion.html`, and

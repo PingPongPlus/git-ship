@@ -33,7 +33,7 @@ STONE = "#697b88"
 
 # Sprite-space mouth positions, shared by the art and its smoke emitter.
 FUNNEL_ORIGINS = {"steam": (21, 18), "tug": (21, 20)}
-SHIP_DESIGNS = ("steam", "tug", "freighter", "sail")
+SHIP_DESIGNS = ("steam", "tug", "freighter", "sail", "ferry", "trawler", "tanker")
 
 LANGUAGES = json.loads(files("git_ship").joinpath("assets/languages.json").read_text())
 
@@ -69,10 +69,110 @@ def language_style(name: str, config: Config, *, design: str | None = None) -> S
     return Style(label, design if design is not None else known["design"], hull, trim)
 
 
-def ship_sprite(style: Style, width: int, cargo: int = 0) -> Image.Image:
+def _approved_superstructure(
+    d: ImageDraw.ImageDraw, style: Style, width: int, hook_sway: int
+) -> None:
+    """Approved 60-pixel hull studies, fitted beside the unchanged cargo bank."""
+
+    def x(value: int) -> int:
+        return 21 + round((value - 21) * (width - 24) / 36)
+
+    def rect(box: tuple[int, int, int, int], fill: str) -> None:
+        left, top, right, bottom = box
+        d.rectangle((x(left), top, x(right), bottom), fill=fill)
+
+    def points(vertices: list[tuple[int, int]]) -> list[tuple[int, int]]:
+        return [(x(px), py) for px, py in vertices]
+
+    if style.design == "ferry":
+        rect((22, 29, 55, 38), INK)
+        rect((23, 30, 54, 37), CREAM)
+        rect((23, 30, 24, 37), SHADE)
+        for px in (27, 34, 41, 48):
+            rect((px, 32, px + 3, 35), INK)
+            rect((px + 1, 32, px + 2, 34), style.trim)
+        rect((25, 19, 53, 28), INK)
+        rect((26, 20, 52, 27), CREAM)
+        rect((26, 20, 27, 27), SHADE)
+        for px in (30, 37, 44):
+            rect((px, 22, px + 3, 25), INK)
+            rect((px + 1, 22, px + 2, 24), style.trim)
+        rect((23, 18, 55, 19), INK)
+        rect((24, 19, 54, 19), style.trim)
+        rect((21, 28, 56, 29), INK)
+        rect((22, 29, 55, 29), style.trim)
+        rect((40, 9, 42, 18), INK)
+        rect((41, 10, 41, 17), GOLD)
+        d.polygon(points([(43, 10), (48, 12), (43, 14)]), fill=style.trim)
+    elif style.design == "trawler":
+        rect((26, 8, 28, 38), INK)
+        rect((27, 10, 27, 37), style.trim)
+        d.line(points([(28, 14), (40, 20)]), fill=INK, width=2)
+        d.line(points([(29, 14), (40, 19)]), fill=style.trim)
+        d.line(points([(27, 9), (40, 19)]), fill=SHADE)
+        # Only the suspended line and hook sway; their boom anchor stays fixed.
+        limit = 1 if width < 50 else 2
+        sway = max(-limit, min(hook_sway, limit))
+        d.line([(x(40), 20), (x(40) + sway, 33)], fill=INK)
+        d.line(
+            [(x(px) + sway, py) for px, py in ((40, 33), (38, 35), (36, 35), (36, 32))],
+            fill=GOLD,
+        )
+        rect((31, 35, 35, 38), INK)
+        rect((32, 36, 34, 37), SHADE)
+        rect((44, 24, 56, 38), INK)
+        rect((45, 25, 55, 37), CREAM)
+        rect((45, 25, 46, 37), SHADE)
+        for px in (48, 52):
+            rect((px, 27, px + 2, 31), INK)
+            rect((px + 1, 27, px + 1, 30), style.trim)
+        rect((42, 22, 57, 24), INK)
+        rect((43, 23, 56, 23), style.trim)
+        rect((51, 16, 53, 22), INK)
+        rect((52, 17, 52, 21), GOLD)
+    elif style.design == "tanker":
+        for px in (22, 33):
+            d.polygon(
+                points(
+                    [(px + 2, 27), (px + 7, 27), (px + 9, 29), (px + 9, 37), (px, 37), (px, 29)]
+                ),
+                fill=INK,
+            )
+            d.polygon(
+                points(
+                    [
+                        (px + 2, 28),
+                        (px + 7, 28),
+                        (px + 8, 30),
+                        (px + 8, 36),
+                        (px + 1, 36),
+                        (px + 1, 30),
+                    ]
+                ),
+                fill=CREAM,
+            )
+            rect((px + 2, 30, px + 3, 36), SHADE)
+            rect((px + 4, 24, px + 5, 27), INK)
+            rect((px + 3, 24, px + 6, 24), GOLD)
+        rect((24, 35, 44, 36), INK)
+        rect((25, 35, 43, 35), style.trim)
+        rect((46, 24, 56, 38), INK)
+        rect((47, 25, 55, 37), CREAM)
+        rect((47, 25, 48, 37), SHADE)
+        rect((50, 27, 53, 31), INK)
+        rect((51, 27, 52, 30), GOLD)
+        rect((44, 22, 57, 24), INK)
+        rect((45, 23, 56, 23), style.trim)
+        rect((51, 15, 53, 22), INK)
+        rect((52, 16, 52, 21), style.trim)
+
+
+def ship_sprite(style: Style, width: int, cargo: int = 0, *, hook_sway: int = 0) -> Image.Image:
     """A right-facing boat, its hull at y=39..52; lettering never scales."""
     if type(cargo) is not int or not 0 <= cargo <= CARGO_LIMIT:
         raise ValueError(f"cargo must be an integer in 0..{CARGO_LIMIT}")
+    if type(hook_sway) is not int:
+        raise ValueError("hook_sway must be an integer")
     if style.design not in SHIP_DESIGNS:
         raise ValueError(f"unknown ship design: {style.design}")
     image = Image.new("RGBA", (width, 56))
@@ -108,7 +208,7 @@ def ship_sprite(style: Style, width: int, cargo: int = 0) -> Image.Image:
         rect((width - 14, 18, width - 14, 23), GOLD)
         for x in (width - 15, width - 10):
             rect((x, 29, x + 2, 32), INK)
-    else:
+    elif style.design == "sail":
         # Stepped triangles: hard integer edges, cream sails and a dark mast.
         d.polygon([(mid - 2, 9), (mid - 2, 35), (21, 35)], fill=INK)
         d.polygon([(mid - 3, 13), (mid - 3, 33), (23, 33)], fill=CREAM)
@@ -118,6 +218,8 @@ def ship_sprite(style: Style, width: int, cargo: int = 0) -> Image.Image:
         rect((mid, 9, mid, 36), style.trim)
         rect((mid - 6, 35, mid + 7, 39), INK)
         rect((mid - 5, 36, mid + 6, 38), CREAM)
+    else:
+        _approved_superstructure(d, style, width, hook_sway)
 
     # Every one of these containers corresponds to one distinct authored commit.
     # Three columns of seven (last row partially filled) fit twenty containers
