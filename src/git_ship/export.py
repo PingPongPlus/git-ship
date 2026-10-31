@@ -15,6 +15,7 @@ from PIL import GifImagePlugin, Image, ImageChops
 from .animation import Animator
 from .config import Config
 from .layout import Scene
+from .sprites import CARGO_GROUP_SIZE, cargo_groups
 from .watermark import watermark_label
 
 
@@ -107,6 +108,7 @@ def export(
             stream.write(b";")
         report = verify_gif(gif_path, frames, config)
         report["activity_window_days"] = config.activity_window
+        report["commits_per_large_container"] = CARGO_GROUP_SIZE
         report["layout_seed"] = scene.layout_seed
         report["lighthouse_beam"] = config.lighthouse_beam
         report["watermark"] = config.watermark
@@ -126,6 +128,8 @@ def export(
                 "x": s.x,
                 "y": s.y,
                 "cargo": s.language.cargo,
+                "large_containers": cargo_groups(s.language.cargo or 0)[0],
+                "small_containers": cargo_groups(s.language.cargo or 0)[1],
             }
             for s in scene.ships
         ]

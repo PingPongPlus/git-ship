@@ -18,16 +18,17 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **149 passed** in 7.10 seconds, with no live API required. |
+| `pytest -q` | **202 passed** in 7.31 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
-| `python scripts/sprite_atlas.py` | Generated the six-language transparent sprite atlas, including 20 C++ containers. |
+| `python scripts/sprite_atlas.py` | Generated the six-language transparent sprite atlas, including 20 C++ commits represented by five large containers. |
 | `git-ship render --demo --seed demo --preview --output-dir examples/demo` | Generated and audited the full six-ship GIF/PNG, preview and contact sheet. |
 | Dynamic layout tests | Check quiet/unknown language filtering, active-language discovery below inactive candidates, the six-ship maximum, placement across the sea, new layouts per render and exact seed replay. |
 | Full motion-envelope tests | Checked 140 scenes: zero through six fully loaded ships across 20 seeds each; all envelopes remain inside the canvas and disjoint. |
 | Dense packing fallback test | Forced the guaranteed-fit path with six maximum-width 62-pixel ships; all full motion envelopes remain inside the canvas and disjoint. |
 | Approved ship-art tests | 24 checks cover the ferry, trawler and tanker artwork and cargo configurations; a separate motion test checks the trawler's connected periodic hook. |
+| Grouped-cargo tests | Exhaustive counts 0–20 across all seven designs and three hull widths; checks also cover four-commit merge points, large-container `4` marks, weighted report counts and exact GIF cleanup. The focused cargo/approved-art suite passed 94 tests. |
 | Fixture time-window tests | Day has no ships; week has JAVA/C++/JS/TS with cargo `[4,6,3,2]`; month has all six with cargo `[7,20,6,4,5,2]`. |
 | Ruby `YAML.load_file` on action, CI, caller workflow and Dependabot | All four files parsed successfully. |
 | Read-only GitHub CLI repository inspection | Destination verified **PUBLIC**, initially with no branch history. |
@@ -40,9 +41,14 @@ Ordinary tests never depend on GitHub availability or write to a remote service.
 
 ## Cargo and time-window contracts
 
-- One unique primary-author commit SHA per classified language becomes one container;
-  a mixed-language commit can load several ships, but repeated files/SHAs do not
-  multiply a ship's count. The visual cap is twenty.
+- One unique primary-author commit SHA contributes one unit to each classified
+  language; a mixed-language commit can load several ships, but repeated
+  files/SHAs do not multiply a ship's count. The display cap is twenty commits.
+- Each large container represents four commits and each small container one.
+  For a displayed count `n`, the drawing uses `n // 4` large containers and
+  `n % 4` small ones. Nine commits become two large plus one small; twenty become
+  five large. A `4` marks each large container. The grouping changes neither API
+  attribution nor selected windows.
 - A language needs confirmed positive cargo to appear. Zero and unknown counts
   are filtered before selecting at most six languages by code-byte share. No
   qualifying languages means a lighthouse-only scene.
@@ -63,11 +69,16 @@ Ordinary tests never depend on GitHub availability or write to a remote service.
   deliberately does not claim content-aware Linguist equivalence.
 - Schema-1 caches are accepted with unknown cargo. Changing a sampled cache's window
   does not invent a count; ships with unknown activity are hidden with a warning.
-- Each design has a reserved cargo bank, clear of rigging, funnels and labels.
-  Tests check zero cargo adds no decorative containers and each requested container
-  occupies its own non-overlapping 5×4-pixel footprint. Three columns fit up to seven
-  tiers and twenty containers total. Zero, one, seven, ten and twenty containers are
-  checked at minimum, middle and maximum hull widths.
+- Each design has a reserved cargo bank at logical `x=3..19`, `y=10..37`, clear
+  of rigging, funnels and labels. Small containers use a constant 5×4-pixel
+  footprint, large containers 8×7. The large containers stack in two columns and
+  up to three tiers; remainder containers use a free lane. Zero cargo adds no
+  decorative containers. Grouped cargo remains inside the existing bank at all
+  supported hull widths.
+- Reports retain `cargo` as a commit count, add each language's `large_containers`
+  and `small_containers`, and expose `commits_per_large_container: 4` at the top
+  level. The weighted total `4*large_containers + small_containers` equals the
+  displayed commit count.
 - Funnel-to-deck continuity and six-character label clearance are checked across all
   supported widths. JavaScript and TypeScript follow the same pipeline as the other
   demo languages. Cargo occludes smoke drifting behind it.
@@ -97,8 +108,10 @@ connected and the hook returns exactly at the loop boundary. It participates in
 the same lighthouse tint as the hull. The ferry, trawler and tanker add no smoke
 emitters; their smaller posts are masts or vents.
 
-Approved empty and twenty-container reference PNGs for each new design are
-retained under `artwork/ship-designs/`. The fixed demo seed selects tanker,
+Approved empty and originally twenty-small-container reference PNGs for each new
+design remain unchanged under `artwork/ship-designs/`. Empty references are still
+pixel-exact; loaded-reference comparisons mask the reserved cargo bank after the
+grouping change, preserving approved hull and superstructure geometry. The fixed demo seed selects tanker,
 trawler, freighter, sail, steam and tug; ferry remains available as the seventh
 registered design without increasing the six-ship scene limit.
 
@@ -118,7 +131,7 @@ does not count.
 A fresh authenticated public-profile fetch after the fix completed in **292
 requests** with no warnings. In the same 365-day window it produced Java cargo
 **20**, C++ **20**, Python **5**, TypeScript **6**, JavaScript **8**, and GLSL
-**20**. The Java result confirms the change from three to the visual cap; twenty
+**20**. The Java result confirms the change from three to the 20-commit display cap; twenty
 represents at least twenty qualifying distinct commits, not an exact total above
 the cap. This audit read live data; ordinary tests remain offline.
 
@@ -177,21 +190,23 @@ Fixture: `src/git_ship/assets/demo.json`, observed on **2026-10-01**.
 | Lighthouse ray | Enabled |
 | Watermark | Enabled; `GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE` |
 | Ship designs, in report order | tanker / trawler / freighter / sail / steam / tug |
-| GIF | **995,583 bytes**, below 2 MB target |
-| PNG | **6,944 bytes**, genuine RGBA |
-| Fully transparent pixels over every frame | **74.0328125%–83.978125%** |
+| GIF | **986,128 bytes**, below 2 MB target |
+| PNG | **7,036 bytes**, genuine RGBA |
+| Fully transparent pixels over every frame | **74.2953125%–84.315625%** |
 | Alpha / palette / disposal | Binary alpha, one shared palette, transparent index 0, disposal 2 |
 | Decoded comparison | All 100 frames exactly match intended alpha and visible RGB |
-| Cargo, in report order | JAVA 7 / C++ 20 / PYTHON 6 / RUST 4 / JS 5 / TS 2 |
+| Represented commits, in report order | JAVA 7 / C++ 20 / PYTHON 6 / RUST 4 / JS 5 / TS 2 |
+| Large/small container counts, in report order | 1/3, 5/0, 1/2, 1/0, 1/1, 0/2 |
 
 The solid ray intentionally occupies otherwise empty pixels while sweeping,
-reducing the demo's minimum transparency to about 74.03% with the watermark
+reducing the demo's minimum transparency to about 74.30% with the watermark
 enabled. Tests continue to require at least 80% transparency for the fleet with
 the ray disabled. With the
 ray enabled, exact binary alpha, palette colors and decoded cleanup remain
 verified. The regenerated contact sheet was inspected for readable Java, Rust
 and JavaScript artwork under the yellow tint, clear header lettering that fits
-above the ships, and the trawler's visible hook motion.
+above the ships, the trawler's visible hook motion, and readable `4` marks on
+the grouped cargo's large containers.
 
 Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 `contact-sheet.png`, `preview.html`, `examples/reduced-motion.html`, and
@@ -200,7 +215,7 @@ Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 The approved reference, still compositions and light/dark contact sheets were
 inspected during implementation. The initial animation and smoke/wake revision were
 also inspected in browser playback on both backgrounds. This revision's six
-ships, free placement, sweeping ray, twenty-container stack, readable labels and smoke clearance were inspected in the
+ships, free placement, sweeping ray, grouped cargo, readable labels and smoke clearance were inspected in the
 regenerated art/contact sheet. Every exported revision is audited after decoding;
 no trails or matte rectangles are accepted. Exact periodicity and seam-step size are
 also covered by tests. Rendering twice with an explicit seed is checked for

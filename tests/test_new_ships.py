@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from PIL import Image, ImageChops, ImageColor
 
-from git_ship.sprites import SHIP_DESIGNS, Style, ship_sprite
+from git_ship.sprites import SHIP_DESIGNS, Style, cargo_groups, ship_sprite
 
 APPROVED = Path(__file__).resolve().parents[1] / "artwork" / "ship-designs"
 STYLES = {
@@ -22,6 +22,13 @@ def test_approved_native_art_is_preserved_exactly(design, cargo):
         actual = ship_sprite(STYLES[design], 60, cargo)
         assert actual.mode == approved.mode == "RGBA"
         assert actual.size == approved.size == (60, 56)
+        if cargo:
+            # Grouped cargo is allowed to change only the reserved cargo bank;
+            # retain the original approved hull and superstructure references.
+            actual = actual.copy()
+            approved = approved.copy()
+            actual.paste((0, 0, 0, 0), (3, 10, 20, 38))
+            approved.paste((0, 0, 0, 0), (3, 10, 20, 38))
         assert actual.tobytes() == approved.tobytes()
 
 
@@ -33,7 +40,10 @@ def test_new_designs_preserve_cargo_clearance_labels_and_canvas(design, width):
     assert empty.crop((3, 10, 20, 38)).getchannel("A").getbbox() is None
     for cargo in (1, 7, 20):
         loaded = ship_sprite(style, width, cargo)
-        assert loaded.crop((3, 10, 20, 38)).getchannel("A").histogram()[255] == cargo * 20
+        large, small = cargo_groups(cargo)
+        assert (
+            loaded.crop((3, 10, 20, 38)).getchannel("A").histogram()[255] == large * 56 + small * 20
+        )
         assert loaded.crop((0, 38, width, 56)).tobytes() == empty.crop((0, 38, width, 56)).tobytes()
         assert set(loaded.getchannel("A").tobytes()) == {0, 255}
         left, top, right, bottom = loaded.getbbox()

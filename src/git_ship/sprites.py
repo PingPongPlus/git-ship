@@ -34,6 +34,7 @@ STONE = "#697b88"
 # Sprite-space mouth positions, shared by the art and its smoke emitter.
 FUNNEL_ORIGINS = {"steam": (21, 18), "tug": (21, 20)}
 SHIP_DESIGNS = ("steam", "tug", "freighter", "sail", "ferry", "trawler", "tanker")
+CARGO_GROUP_SIZE = 4
 
 LANGUAGES = json.loads(files("git_ship").joinpath("assets/languages.json").read_text())
 
@@ -48,6 +49,13 @@ class Style:
     design: str
     hull: str
     trim: str
+
+
+def cargo_groups(cargo: int) -> tuple[int, int]:
+    """Four commits per large container; the remainder stays in small boxes."""
+    if type(cargo) is not int or not 0 <= cargo <= CARGO_LIMIT:
+        raise ValueError(f"cargo must be an integer in 0..{CARGO_LIMIT}")
+    return divmod(cargo, CARGO_GROUP_SIZE)
 
 
 def language_style(name: str, config: Config, *, design: str | None = None) -> Style:
@@ -169,8 +177,7 @@ def _approved_superstructure(
 
 def ship_sprite(style: Style, width: int, cargo: int = 0, *, hook_sway: int = 0) -> Image.Image:
     """A right-facing boat, its hull at y=39..52; lettering never scales."""
-    if type(cargo) is not int or not 0 <= cargo <= CARGO_LIMIT:
-        raise ValueError(f"cargo must be an integer in 0..{CARGO_LIMIT}")
+    large, small = cargo_groups(cargo)
     if type(hook_sway) is not int:
         raise ValueError("hook_sway must be an integer")
     if style.design not in SHIP_DESIGNS:
@@ -221,13 +228,25 @@ def ship_sprite(style: Style, width: int, cargo: int = 0, *, hook_sway: int = 0)
     else:
         _approved_superstructure(d, style, width, hook_sway)
 
-    # Every one of these containers corresponds to one distinct authored commit.
-    # Three columns of seven (last row partially filled) fit twenty containers
-    # in a reserved aft-deck bank, without changing box size as the count grows.
-    for index in range(cargo):
-        x = 3 + (index % 3) * 6
-        y = 34 - (index // 3) * 4
-        color = (style.trim, "#ad655b", "#668fa5")[index % 3]
+    # Compact four commits into one large box marked "4". Remainders remain
+    # individual small boxes; every possible load fits the same reserved bank.
+    colors = (style.trim, "#ad655b", "#668fa5")
+    for index in range(large):
+        x = 3 + (index % 2) * 9
+        y = 31 - (index // 2) * 7
+        rect((x, y, x + 7, y + 6), INK)
+        rect((x + 1, y + 1, x + 6, y + 5), colors[index % 3])
+        for row, bits in enumerate((5, 5, 7, 1, 1)):
+            for column in range(3):
+                if bits & (1 << (2 - column)):
+                    d.point((x + 2 + column, y + 1 + row), fill=INK)
+    for index in range(small):
+        if large:
+            x = 3 + (large % 2) * 9
+            y = 34 - (large // 2) * 7 - index * 4
+        else:
+            x, y = 3 + index * 6, 34
+        color = colors[(large * CARGO_GROUP_SIZE + index) % 3]
         rect((x, y, x + 4, y + 3), INK)
         rect((x + 1, y + 1, x + 3, y + 2), color)
 

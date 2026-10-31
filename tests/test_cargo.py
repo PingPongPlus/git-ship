@@ -10,7 +10,7 @@ from git_ship.github import GitHubClient, GitHubError
 from git_ship.languages import file_language
 from git_ship.layout import layout
 from git_ship.model import Commit, Profile, Repository, rank_languages
-from git_ship.sprites import language_style, ship_sprite
+from git_ship.sprites import cargo_groups, language_style, ship_sprite
 
 
 def commit(number, when="2026-10-01T02:00:00Z", languages=("C++",), author="sailor"):
@@ -250,7 +250,11 @@ def test_only_real_commit_cargo_occupies_the_reserved_deck_and_labels_stay_clear
         assert empty.crop((3, 10, 20, 38)).getchannel("A").histogram()[255] == 0
         for count in (1, 7, 10, 20):
             loaded = ship_sprite(style, width, count)
-            assert loaded.crop((3, 10, 20, 38)).getchannel("A").histogram()[255] == count * 20
+            large, small = cargo_groups(count)
+            assert (
+                loaded.crop((3, 10, 20, 38)).getchannel("A").histogram()[255]
+                == large * 56 + small * 20
+            )
             assert (
                 loaded.crop((0, 38, width, 56)).tobytes()
                 == empty.crop((0, 38, width, 56)).tobytes()

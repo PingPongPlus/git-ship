@@ -11,12 +11,17 @@ horizontally; text is painted at its native size and never stretched. The concep
 reference is never loaded by the renderer. These sources and generated demo art
 are covered by the project's MIT license; references are retained for provenance.
 
-Cargo uses a reserved aft-deck bank on every design: three columns, up to seven
-tiers and twenty containers total. Each constant-size 5×4-pixel container
-represents one distinct authored commit in the selected data window. Zero or
-unknown activity means the entire ship is hidden. There are no decorative cargo
-blocks. The six-language atlas uses the CLI fixture's labels, colors and cargo
-counts, including JS, TS and a C++ ship with twenty containers. Cargo stays inside the sprite;
+Cargo uses the reserved aft-deck bank on every design, within logical coordinates
+`x=3..19`, `y=10..37`. Each **5×4-pixel small container represents one commit**;
+each **8×7-pixel large container represents four commits** and carries a `4`
+mark. Every complete group
+of four is drawn as one large container, with zero to three small containers for
+the remainder. Large containers stack in two columns and up to three tiers;
+remainders occupy a free lane. Twenty represented commits become five large
+containers. Zero or unknown activity means the entire ship is hidden. There are
+no decorative cargo blocks. The six-language atlas uses the CLI fixture's labels,
+colors and commit counts, including JS, TS and C++ with twenty represented commits.
+Cargo stays inside the sprite;
 smoke passes behind it, and labels, cabins, funnels and sails remain unobstructed.
 Normal renders sample fresh positions across the sea while reserving each ship's
 full motion envelope. Bounded retries and a randomized packing fallback keep up
@@ -35,7 +40,11 @@ configuration or commit count; shapes are not permanently assigned to languages.
 Approved reference PNGs are retained in [ship-designs](ship-designs/):
 `ferry-cargo-0.png`, `ferry-cargo-20.png`, `trawler-cargo-0.png`,
 `trawler-cargo-20.png`, `tanker-cargo-0.png` and `tanker-cargo-20.png`. The
-editable production versions live in `src/git_ship/sprites.py`.
+editable production versions live in `src/git_ship/sprites.py`. These historical
+approval images remain unchanged: their loaded decks show the earlier twenty
+small containers. Current cargo uses five large containers for the same twenty
+commits. Empty references remain pixel-exact; loaded-reference comparisons mask
+the cargo bank so approved hulls and superstructures stay unchanged.
 
 The trawler's rope and hook animate separately from the static hull. The rope
 starts at the fixed boom tip while the hook sways by one pixel on narrow hulls

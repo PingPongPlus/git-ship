@@ -4,16 +4,17 @@
   "frames": 100,
   "fps": 10,
   "duration_seconds": 10.0,
-  "gif_bytes": 995583,
-  "min_transparent_fraction": 0.740328125,
-  "max_transparent_fraction": 0.83978125,
+  "gif_bytes": 986128,
+  "min_transparent_fraction": 0.742953125,
+  "max_transparent_fraction": 0.84315625,
   "decoded_frames_match": true,
   "activity_window_days": 30,
+  "commits_per_large_container": 4,
   "layout_seed": "demo",
   "lighthouse_beam": true,
   "watermark": true,
   "watermark_text": "git-ship past month commit & shipped code",
-  "png_bytes": 6944,
+  "png_bytes": 7036,
   "languages": [
     {
       "name": "Java",
@@ -24,7 +25,9 @@
       "width": 53,
       "x": 329,
       "y": 22,
-      "cargo": 7
+      "cargo": 7,
+      "large_containers": 1,
+      "small_containers": 3
     },
     {
       "name": "C++",
@@ -35,7 +38,9 @@
       "width": 52,
       "x": 227,
       "y": 91,
-      "cargo": 20
+      "cargo": 20,
+      "large_containers": 5,
+      "small_containers": 0
     },
     {
       "name": "Python",
@@ -46,7 +51,9 @@
       "width": 51,
       "x": 91,
       "y": 58,
-      "cargo": 6
+      "cargo": 6,
+      "large_containers": 1,
+      "small_containers": 2
     },
     {
       "name": "Rust",
@@ -57,7 +64,9 @@
       "width": 50,
       "x": 254,
       "y": 20,
-      "cargo": 4
+      "cargo": 4,
+      "large_containers": 1,
+      "small_containers": 0
     },
     {
       "name": "JavaScript",
@@ -68,7 +77,9 @@
       "width": 48,
       "x": 162,
       "y": 43,
-      "cargo": 5
+      "cargo": 5,
+      "large_containers": 1,
+      "small_containers": 1
     },
     {
       "name": "TypeScript",
@@ -79,7 +90,9 @@
       "width": 47,
       "x": 300,
       "y": 95,
-      "cargo": 2
+      "cargo": 2,
+      "large_containers": 0,
+      "small_containers": 2
     }
   ]
 }
