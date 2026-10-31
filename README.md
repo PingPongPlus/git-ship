@@ -1,0 +1,257 @@
+# Git Ship
+
+A little lighthouse for you. A cargo fleet for your languages. Your GitHub README supplies the open sea.
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="examples/demo/git-ship.png">
+  <img src="examples/demo/git-ship.gif" width="800" alt="A lighthouse beside JAVA, C++, PYTHON, RUST and JS pixel ships, carrying stacks of commit cargo over small foamy wakes.">
+</picture>
+
+Git Ship is an open-source **reusable GitHub Action** and Python CLI for anyone's profile. It fetches your public repository data and generates a transparent animated GIF plus a matching static PNG. **One cargo container represents one of your commits, up to 10 per ship.** Regenerate automatically every day and choose a **1-day, 7-day, or 30-day** activity window. No hosted application, external image service, or personal access token is needed for the normal setup.
+
+## Set up daily updates with GitHub Actions
+
+1. Open your public profile repository: `YOUR_USERNAME/YOUR_USERNAME`.
+2. Add the workflow below as `.github/workflows/git-ship.yml` on its default branch. The complete file is also available in [examples/profile-workflow.yml](examples/profile-workflow.yml).
+3. Allow GitHub Actions to run. Repository/organization rules must permit this job's `contents: write` permission and pushes to the **`output`** branch.
+4. Run **Actions → Git Ship → Run workflow** once. Choose `day`, `week`, or `month`.
+5. Add the README image shown below, replacing both username placeholders.
+
+```yaml
+name: Git Ship
+on:
+  schedule:
+    - cron: '23 3 * * *' # Every day at 03:23 UTC.
+  workflow_dispatch:
+    inputs:
+      period:
+        description: Activity and cargo data window
+        type: choice
+        options: [day, week, month]
+        default: month
+
+permissions:
+  contents: read
+
+concurrency:
+  group: git-ship-output
+  cancel-in-progress: false
+
+jobs:
+  fleet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Generate fleet
+        id: ship
+        uses: PingPongPlus/git-ship@main
+        with:
+          username: ${{ github.repository_owner }}
+          output-dir: git-ship-output
+          token: ${{ github.token }}
+          data-window: ${{ inputs.period || vars.GIT_SHIP_DATA_WINDOW || 'month' }}
+      - name: Publish only images to output branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SHIP_PUBLISH_SCRIPT: ${{ steps.ship.outputs.publish-script }}
+          SHIP_ASSETS: ${{ steps.ship.outputs.output-dir }}
+          SHIP_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          python "$SHIP_PUBLISH_SCRIPT" \
+            --assets-dir "$SHIP_ASSETS" \
+            --repository "$GITHUB_REPOSITORY" \
+            --default-branch "$SHIP_DEFAULT_BRANCH"
+```
+
+`main` tracks development. For a stable installation, replace it with a reviewed full commit SHA. No `v1` release tag or Marketplace release is claimed yet; `PingPongPlus/git-ship@main` is the source-based reusable action. Nothing is hard-coded to the project's owner: the example uses **your** repository owner, your workflow token, and your repository's output branch.
+
+### Choose your data window
+
+| Value | Cargo and activity period |
+| --- | --- |
+| `day` | Previous 24 hours |
+| `week` | Previous 7 × 24 hours |
+| `month` | Previous 30 × 24 hours, the default |
+
+The **update schedule and data window are independent**: a fleet with a month of data still regenerates every day. For nightly runs, set repository variable **`GIT_SHIP_DATA_WINDOW`** to `day`, `week`, or `month` under Settings → Secrets and variables → Actions → Variables. Alternatively, replace the workflow's `data-window:` expression with a fixed value such as `week`. The manual dropdown overrides the variable for that run only. A month means 30 rolling days, not a calendar-month boundary.
+
+This window controls authored-commit cargo, repository push-recency movement, and the optional contribution total. **Language selection and ship sizing use the current reported code-byte share**, rather than pretending GitHub's repository-language snapshot is a historical byte census.
+
+Cron defaults to UTC: 03:23 UTC is 04:23 CET / 05:23 CEST. Scheduled workflows must exist on the default branch and can be delayed or dropped during load. Inactive public repositories can have schedules disabled after 60 days. See [GitHub's schedule documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+
+### README image
+
+Replace `YOUR_USERNAME` in **both** owner and repository positions:
+
+```md
+![My languages as pixel ships carrying commit cargo beside a lighthouse](https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_USERNAME/output/git-ship.gif)
+
+[View the still image](https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_USERNAME/output/git-ship.png)
+```
+
+For readers who prefer reduced motion, use a static fallback:
+
+```html
+<picture>
+  <source media="(prefers-reduced-motion: no-preference)"
+    srcset="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_USERNAME/output/git-ship.gif">
+  <img width="800"
+    src="https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_USERNAME/output/git-ship.png"
+    alt="My public repository languages as pixel ships carrying commit cargo beside a lighthouse">
+</picture>
+```
+
+Browsers that support the media query animate only with no reduced-motion preference. Other clients receive the PNG. The local [picture proof](examples/reduced-motion.html) uses the same structure. GitHub sanitization, image caching and client behavior can change; a newly published profile embed still needs checking on GitHub. Use a direct PNG embed for an unconditional still. The local preview includes a pause button; a standalone README GIF does not.
+
+## Action interface and publishing
+
+| Input | Default / meaning |
+| --- | --- |
+| `username` | Explicit input → config username → caller repository owner |
+| `data-window` | `day`, `week`, or `month`; empty uses TOML `activity_window`, then 30 days |
+| `output-dir` | `git-ship-output`, a subdirectory inside the caller workspace |
+| `config` | Optional TOML path inside the caller workspace |
+| `token` | Built-in `${{ github.token }}`, supplied as `GITHUB_TOKEN` internally |
+| `demo` | `false`; `true` renders the offline fixture for verification |
+
+Outputs **`gif`**, **`png`**, and **`output-dir`** are absolute paths. **`publish-script`** is the path of the optional publishing helper. Inputs are passed through environment variables and Python argument arrays, without interpolation into shell code. The composite action selects Python 3.13 and installs this package plus Pillow in a temporary virtual environment. Installation requires network access even when demo **rendering** is offline. Linux and macOS runners with Bash are supported; use `ubuntu-latest` for the example. GitHub Enterprise Server and organization profiles are outside the live-fetch support.
+
+Generation and publishing are separate. The action itself never commits or pushes. The example's publisher creates an isolated temporary repository, writes **only `git-ship.gif` and `git-ship.png`**, preserves unrelated output-branch files, uses non-force pushes, and commits only when images change. It refuses a default branch named `output` and leaves the caller checkout/default branch untouched. GitHub permissions apply to the whole job, so the example job needs `contents: write` for its separate publication step. No other permission is requested. You can instead publish the returned paths using your own strategy.
+
+Use the built-in `GITHUB_TOKEN`. It belongs to the **caller repository**, not to the profile owner as a general account credential. It cannot grant access to unrelated private repositories. Some public REST requests may be rejected because of installation scope; Git Ship retries those public GETs anonymously with a warning and the smaller anonymous rate limit. Invalid tokens (401), primary/secondary limits and failed cargo requests produce clear errors. Optional GraphQL contribution totals may be unavailable to installation tokens; that gentle animation input uses the peaceful baseline with a warning. No cargo is fabricated to hide API failures. See [token permissions](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token) and [REST rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
+
+Output commits use `github-actions[bot]` and are not attributed as your authored commits. Cargo reads default-branch history, so output-branch image commits do not load your ships. Publication can still update repository-level `pushed_at`; if your profile repository contains measurable code, exclude it to avoid feedback into that movement proxy.
+
+## What each container means
+
+Git Ship uses [official repository and commit APIs](https://docs.github.com/en/rest/commits/commits):
+
+1. List public, owned, non-fork repositories; include archived repositories by default. Apply configured repository filters before fetching language bytes.
+2. Rank languages by summed reported **byte counts**, with a case-insensitive language-name tie break. These are code shares, not coding time, skill, or authored lines. Show up to five available positive-byte languages; never invent filler ships.
+3. For the displayed languages, list **your authored commits on each repository's default branch**, filtered by username and the selected rolling window. Use the commit's **committer timestamp**, matching the REST history filter. Unmapped authors and commits by other users do not count. A co-author trailer by itself is not included by this primary-author filter. Merge commits count if returned as your authored commit and they affect a classified language.
+4. Read every returned commit's changed-file pages. Assign filenames/extensions using vendored [GitHub Linguist metadata](https://github.com/github-linguist/linguist/blob/73ee9a3b277f398c37ca4ab0dea0193849de6460/lib/linguist/languages.yml), including named files, compound suffixes and language groups. Ambiguous extensions use the repository's largest reported candidate language. A `.C` → C++ override supports the conventional uppercase extension.
+5. **One distinct commit SHA per language = one container**, up to **10**. Editing five Python files in one commit still adds one Python container. A commit touching Python and JavaScript can add one container to each. The same SHA across selected repositories is deduplicated. Adds, edits, deletes and renames count; a language-changing rename can affect both the old and new language.
+
+File attribution is a **filename-based heuristic**, not GitHub's full content-aware Linguist engine. It does not evaluate file contents, shebangs, repository `.gitattributes`, vendored/generated-file rules or content disambiguation. Only languages with positive reported bytes in the selected repository are candidates; a language removed entirely from the current snapshot will not create a ship. This limitation is separate from the real commit counts: every shown container still corresponds to a fetched authored commit under the stated attribution rule.
+
+Zero matching commits means zero containers. There are no decorative cargo blocks. All four designs reserve deck space for two columns of five containers, keeping the hull name, sails, cabin and smoke clear. The demo includes **JAVA (7)**, **C++ (10)**, **PYTHON (6)**, **RUST (4)**, and a gold **JavaScript/JS (5)** ship.
+
+Fetching stops once all displayed languages have ten known commits; larger counts are intentionally represented as **10**, not reported as an exact total. Repository/commit lists are bounded to ten 100-item pages each, commit files to 30 pages, responses to 10 MB, and a run to 2000 HTTP attempts. Reaching GitHub's 3000-file-per-commit limit or a pagination/request limit fails clearly rather than silently undercounting. Narrow repository filters or the data window for large profiles. Public API limits may be lower than these client bounds.
+
+## Run locally, entirely offline if desired
+
+Requires **Python 3.11+** and **Pillow 13.x**, the only runtime dependency. See [Pillow's supported Python versions](https://pillow.readthedocs.io/en/stable/installation/python-support.html). No PyPI release is claimed; install from this source:
+
+```sh
+git clone https://github.com/PingPongPlus/git-ship.git
+cd git-ship
+python3 -m venv .venv # Select a Python 3.11+ interpreter.
+source .venv/bin/activate
+python -m pip install .
+git-ship render --demo --preview --output-dir out
+```
+
+```sh
+git-ship render --username YOUR_USERNAME --data-window day --output-dir out
+git-ship render --username YOUR_USERNAME --data-window week --output-dir out
+git-ship render --username YOUR_USERNAME --data-window month --output-dir out
+git-ship render --config examples/config.toml --output-dir out
+git-ship render --username YOUR_USERNAME --cache-profile out/profile.json --output-dir out
+git-ship render --profile out/profile.json --output-dir out/offline
+```
+
+Replace the example config's username before a live render. Without `GITHUB_TOKEN`, public REST works at GitHub's lower anonymous limit and contribution totals remain unavailable. Never pass tokens on the CLI or put them in configuration. The fixed demo uses 2026-10-01 and works without credentials or network access, even if `GITHUB_TOKEN` is set.
+
+Open `out/preview.html` directly or serve it with `python -m http.server 8000` and visit `http://localhost:8000/out/preview.html`. It shows the same transparent GIF on light/dark backgrounds at 800/400 px. Preview backgrounds never enter exported artwork.
+
+| File | Purpose |
+| --- | --- |
+| `git-ship.gif` | Transparent endlessly looping animation |
+| `git-ship.png` | Transparent static frame zero |
+| `report.json` | Dimensions, timing, size, transparency, window days and cargo counts |
+| `preview.html` | Optional light/dark playback and pause control |
+| `contact-sheet.png` | Optional four-time-point verification sheet |
+
+Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/authors/timestamps/language assignments, the observation instant and cargo window; never credentials or patches. Schema-1 caches remain readable but have unknown cargo. Since live scans can stop at the 10-container cap, refetch when changing a cached data window, observation date, repository filters, or visible fleet. Unknown cached cargo is omitted with a warning and `null` in the report. A real count of zero is `0`. A fixed observation date freezes calculation time at that date's end in UTC, not GitHub history: cache a profile for repeatable historical rendering.
+
+## Customize
+
+[examples/config.toml](examples/config.toml) lists all options. CLI flags override TOML. Action inputs override the corresponding TOML values. `--data-window day|week|month` is shorthand for `--activity-window 1|7|30`; the two flags are mutually exclusive.
+
+| Key | Default | Bounds / behavior |
+| --- | --- | --- |
+| `username` | empty | Required live; a GitHub user login |
+| `ships` | 5 | 0–5, limited to available languages |
+| `activity_window` | 30 | Rolling days, 1–365; friendly presets are 1/7/30 |
+| `scale` | 2 | Integer 1–4; 400×160 logical grid, nearest-neighbor export |
+| `fps` | 10 | 5, 10, 20 or 25, all exact GIF centiseconds |
+| `duration` | 10 | Integer seconds, 2–20; at most 300 frames |
+| `seed` | username | String/integer cosmetic identity |
+| `observation_date` | current instant live | ISO/TOML date; override uses end of that UTC date; offline uses its fixture instant/date |
+| `include_forks` | false | Include owned public forks when explicitly enabled |
+| `include_archived` | true | Archived code contributes by default |
+| `include` | `[]` | Empty means all; otherwise case-insensitive repository globs |
+| `exclude` | `[]` | Exclusions win; short name or `owner/name` globs |
+| `[labels]` | language mapping | 1–6 uppercase letters/digits or `+ # space . -` |
+| `[colors]` | language mapping | `#RRGGBB`; bright colors become trim with a darkened hull |
+
+Abbreviations include JS, TS, IPYNB, and OBJ-C. Unknown names use an uppercase ASCII approximation truncated to six characters; configure labels to avoid collisions. Full language names remain in the report. Unknown languages receive deterministic design/color variants. Quiet profiles still drift; empty profiles keep the lighthouse and localized ripples. Total export workload is capped at **80 million frame-pixels** before allocation; not every otherwise-valid scale/fps/duration combination fits. RGBA, indexed and verification frames make peak memory several times the pixel count.
+
+## Exact activity and animation formulas
+
+Let `T` be the stored UTC observation instant and `W` the chosen day count. Live time windows are `(T - W×24 hours, T]`. Offline fixtures without an instant use the end of their observation date; an explicit `--observation-date` does the same. Cosmetic phases are seeded with SHA-256 of the case-folded username or explicit seed.
+
+For language `L`, `B[L] = sum(selected_repo_bytes[L])`, and `share[L] = B[L]/sum(B)`. For repository `R`, `age[R] = (T - pushed_at[R])/86400 seconds`, and `recency[R] = max(0, 1 - age[R]/W)` for a present, nonfuture timestamp; otherwise zero. `activity[L] = sum(bytes[R,L]*recency[R])/B[L]`. This movement input is a **repository-level last-push proxy**, including pushes by other users and to other languages; cargo uses the separate authored-commit/file pipeline above.
+
+The optional [GraphQL contribution calendar](https://docs.github.com/en/graphql/reference/users#contributionscollection) is requested for the same chosen interval. GitHub defines its contribution types, daily calendar aggregation and token visibility; it is not a precise per-language commit counter. Clamp `energy = min(total,1000)/1000`; unavailable totals stay null and use energy zero with a warning. Language bytes are not time-windowed.
+
+For `n` ships, `slot = 318/n`; hull width is `min(round(44 + 16*sqrt(share)), floor(slot)-20, 62)`. For normalized loop time `t` and stable phase `p`, horizontal drift is `round((2.5 + 1.5*activity)*sin(2π(t+p)))`; bob is `round((1.2 + 0.8*energy)*sin(4π(t+p)))`. Names and cargo move with the same sprite. Boats face right while surging and easing astern in their small mooring area; there is no offscreen wrap or teleport.
+
+Three blue/white wake clusters cycle three times per loop, visible for phases 0.08–0.78, changing length/crest and drifting left. End crests tuck behind the hull; the middle patch sits below the keel. Two staggered steam/tug puffs cycle three times, visible from phase 0 to 0.86, rising 11 pixels and drifting left 7 pixels. A shared funnel-mouth anchor keeps smoke aligned and the stack connected to the deck. Two localized lighthouse ripples and a tiny lantern cycle twice. Frames sample `i/frame_count`; no extra closing-frame hold is appended.
+
+PNG has real binary RGBA alpha. GIF uses one exact shared palette, transparency index **0**, full-frame image blocks and **disposal 2**, with optimization disabled. No matte, quantization, antialiasing, filled sea/sky or checkerboard is drawn. Pillow's public GIF block helpers preserve identical adjacent frames in quiet scenes. Every saved GIF frame is decoded and compared against intended alpha and visible RGB, including vacated pixels, before images replace existing assets. See [Pillow's GIF options](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif).
+
+Current five-ship demo: **800×320**, **100 frames**, **10 fps**, **10 seconds**, **695,377 GIF bytes**; PNG **4,763 bytes**. Every frame is **87.40–87.71% fully transparent**. Sizes may change with source/palette/Pillow versions; `report.json` records actual measurements. The 2 MB target is a warning threshold, not a reason to hide names or cargo. 800 px is recommended; 400 px is the compact proof.
+
+## Develop, test and inspect
+
+```sh
+python -m pip install -e '.[dev]'
+ruff check .
+ruff format --check .
+pytest -q
+python -m build --no-isolation
+python scripts/sprite_atlas.py
+git-ship render --demo --preview --output-dir examples/demo
+```
+
+Ordinary tests use fixtures and local temporary Git repositories, with no live API or push requirement. They cover file-language classification, commit/file pagination, author filtering, SHA deduplication, time windows, the ten-container cap, legacy/changed-window caches, cargo count/clearance across designs, JavaScript, ranking/filters, loop continuity, exact decoded palette/disposal cleanup, offline CLI/action execution, and isolated output-branch publishing. CI runs on pushes and pull requests with Python 3.11/3.15, lint, tests, package build and an offline render. A separate job invokes the actual local root composite action with `uses: ./` and a selected data window. CI does not publish images or releases. Dependabot checks Actions and Python dependencies monthly. Actions currently use v7 major refs; pin immutable SHAs if required by your policy.
+
+Editable artwork is documented in [artwork/README.md](artwork/README.md). The renderer separates fetching (`github.py`), normalization/ranking (`model.py`), filename attribution (`languages.py`), validation (`config.py`), safe layout (`layout.py`), pixel art (`sprites.py`, `font.py`), animation (`animation.py`), export/audit (`export.py`) and local proof (`preview.py`). `scripts/run_action.py` runs the same CLI for any caller; `scripts/publish_assets.py` is optional and separate.
+
+The [approved reference](references/concept-transparent.png) and [original brief](PROMPT.md) are retained. Later cargo/window requirements extend that brief. [Verification notes](docs/verification.md) record actual commands, measurements and remaining external checks.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Workflow does not run daily | Keep it on the default branch, enable Actions, check schedule inactivity and GitHub delays. Manual execution is available. |
+| Nightly period differs from the last manual run | The dropdown is per-run; set `GIT_SHIP_DATA_WINDOW` or a fixed workflow input for the persistent default. |
+| 401 | Correct/unset an invalid local `GITHUB_TOKEN`; use `${{ github.token }}` in Actions. |
+| 403/429 / rate limit | Retry after reset, narrow repositories/window, and avoid tight retries. Public anonymous fallback has a smaller quota. |
+| Contribution total unavailable | Some installation tokens cannot query the calendar; the fleet and real commit cargo still work. |
+| Push rejected | Allow job `contents: write` and output-branch updates. Concurrent non-force updates fail clearly and can be retried. |
+| Missing/stale image | Run manually, inspect `output`, check both URL username segments, and allow for GitHub's image proxy cache. |
+| Few/no ships | Only positive-byte languages from selected public, owned repositories appear. Forks are excluded by default. |
+| Empty/small cargo | The period includes only your default-branch authored commits with matching file-language classification. Ten is the visual cap. |
+| Unknown cached cargo | Fetch a fresh profile for the chosen window/fleet. Old caches do not contain commit data. |
+
+No private-repository rendering, full Linguist content engine, release decorations, hosted service, APNG/SVG export or automatic account-permission changes are included. Network/5xx errors retry up to three attempts with 1/2-second waits and 30-second request timeouts; limits fail promptly. Failures never silently replace live data with stale cache. This source-based action is usable by public callers; tagging a versioned release and publishing a Marketplace listing are separate steps.
+
+Code and original generated art: [MIT](LICENSE). The vendored filename mapping derives from GitHub Linguist revision `73ee9a3b277f398c37ca4ab0dea0193849de6460` under its packaged [MIT license](src/git_ship/assets/linguist-LICENSE.txt); no grammars are bundled.

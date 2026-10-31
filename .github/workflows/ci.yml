@@ -1,0 +1,56 @@
+name: Verify
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python: ['3.11', '3.15']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install '.[dev]'
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest -q
+      - run: python -m build --no-isolation
+      - run: git-ship render --demo --preview --output-dir out
+  local-action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Exercise the actual local composite action, offline
+        id: ship
+        uses: ./
+        with:
+          demo: 'true'
+          data-window: week
+          output-dir: action-smoke
+          token: ''
+      - name: Verify action outputs
+        env:
+          SHIP_GIF: ${{ steps.ship.outputs.gif }}
+          SHIP_PNG: ${{ steps.ship.outputs.png }}
+        run: |
+          test -s "$SHIP_GIF"
+          test -s "$SHIP_PNG"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: action-smoke
+          path: action-smoke/
+          if-no-files-found: error

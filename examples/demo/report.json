@@ -1,0 +1,55 @@
+{
+  "width": 800,
+  "height": 320,
+  "frames": 100,
+  "fps": 10,
+  "duration_seconds": 10.0,
+  "gif_bytes": 695377,
+  "min_transparent_fraction": 0.873984375,
+  "max_transparent_fraction": 0.877109375,
+  "decoded_frames_match": true,
+  "activity_window_days": 30,
+  "png_bytes": 4763,
+  "languages": [
+    {
+      "name": "Java",
+      "label": "JAVA",
+      "code_share": 0.296296,
+      "activity": 0.95,
+      "width": 43,
+      "cargo": 7
+    },
+    {
+      "name": "C++",
+      "label": "C++",
+      "code_share": 0.259259,
+      "activity": 0.95,
+      "width": 43,
+      "cargo": 10
+    },
+    {
+      "name": "Python",
+      "label": "PYTHON",
+      "code_share": 0.222222,
+      "activity": 0.683333,
+      "width": 43,
+      "cargo": 6
+    },
+    {
+      "name": "Rust",
+      "label": "RUST",
+      "code_share": 0.148148,
+      "activity": 0.45,
+      "width": 43,
+      "cargo": 4
+    },
+    {
+      "name": "JavaScript",
+      "label": "JS",
+      "code_share": 0.074074,
+      "activity": 0.883333,
+      "width": 43,
+      "cargo": 5
+    }
+  ]
+}

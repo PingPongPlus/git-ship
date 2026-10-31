@@ -1,0 +1,71 @@
+name: Git Ship
+description: Generate a transparent animated language fleet for a GitHub profile README
+author: Git Ship contributors
+branding:
+  icon: anchor
+  color: blue
+inputs:
+  username:
+    description: GitHub username; defaults to config username, then repository owner
+    required: false
+    default: ''
+  output-dir:
+    description: Generated asset directory inside the caller workspace
+    required: false
+    default: git-ship-output
+  config:
+    description: Optional TOML configuration path in the caller workspace
+    required: false
+    default: ''
+  data-window:
+    description: Rolling activity/cargo period; day (1), week (7), month (30); empty uses config
+    required: false
+    default: ''
+  token:
+    description: Built-in GitHub token for public data; never saved with the assets
+    required: false
+    default: ${{ github.token }}
+  demo:
+    description: Render the bundled fixture entirely offline (for smoke tests)
+    required: false
+    default: 'false'
+outputs:
+  gif:
+    description: Absolute path to the transparent animated GIF
+    value: ${{ steps.render.outputs.gif }}
+  png:
+    description: Absolute path to the static transparent PNG
+    value: ${{ steps.render.outputs.png }}
+  output-dir:
+    description: Absolute path to generated assets
+    value: ${{ steps.render.outputs.output-dir }}
+  publish-script:
+    description: Optional isolated output-branch publishing helper (generation does not run it)
+    value: ${{ steps.render.outputs.publish-script }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.13'
+    - id: render
+      shell: bash
+      env:
+        SHIP_ACTION_PATH: ${{ github.action_path }}
+        SHIP_ENV: ${{ runner.temp }}/git-ship-${{ github.action }}
+        SHIP_USERNAME: ${{ inputs.username }}
+        SHIP_OUTPUT_DIR: ${{ inputs.output-dir }}
+        SHIP_CONFIG: ${{ inputs.config }}
+        SHIP_DATA_WINDOW: ${{ inputs.data-window }}
+        SHIP_DEMO: ${{ inputs.demo }}
+        SHIP_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        GITHUB_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          echo '::error::Git Ship composite action supports Linux and macOS; use ubuntu-latest.'
+          exit 1
+        fi
+        python -m venv "$SHIP_ENV"
+        "$SHIP_ENV/bin/python" -m pip install --disable-pip-version-check "$SHIP_ACTION_PATH"
+        "$SHIP_ENV/bin/python" "$SHIP_ACTION_PATH/scripts/run_action.py"

@@ -1,0 +1,21 @@
+# All keys are optional except username for a live render.
+username = "YOUR-USERNAME" # Replace with your actual GitHub login.
+ships = 5
+scale = 2
+fps = 10
+duration = 10
+activity_window = 30 # 1 = day, 7 = week, 30 = month; affects commits and movement.
+include_forks = false
+include_archived = true
+include = [] # Empty means all public, owned repositories.
+exclude = ["*-generated"] # Matches short names or owner/name, case-insensitively.
+# seed = "my-stable-fleet" # Defaults to the username.
+# observation_date = 2026-10-01 # TOML date or ISO string; live default is today UTC.
+
+[labels]
+"JavaScript" = "JS"
+"C#" = "C#"
+"Objective-C" = "OBJ-C"
+
+[colors]
+"Rust" = "#a34e44"

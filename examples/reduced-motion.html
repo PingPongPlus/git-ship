@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Git Ship · reduced-motion embed proof</title>
+<style>
+body {font:16px/1.6 system-ui; margin:32px; color:#192e40; background:#f6f3ec}
+img {max-width:100%; height:auto; image-rendering:pixelated}
+</style>
+<h1>README picture proof</h1>
+<p>This is the recommended README picture structure with local assets.
+With reduced motion it uses PNG; with no preference it uses GIF.
+The still remains the fallback for clients without source/media support.</p>
+<picture>
+  <source media="(prefers-reduced-motion: no-preference)" srcset="demo/git-ship.gif">
+  <img width="800" src="demo/git-ship.png"
+    alt="JAVA, C++, PYTHON, RUST and JS pixel ships with commit cargo beside a lighthouse">
+</picture>
+</html>

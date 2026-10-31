@@ -1,0 +1,23 @@
+{
+  "Java": {"label": "JAVA", "design": "steam", "hull": "#69424b", "trim": "#d8a44c"},
+  "C++": {"label": "C++", "design": "freighter", "hull": "#335c87", "trim": "#79accc"},
+  "Python": {"label": "PYTHON", "design": "sail", "hull": "#287477", "trim": "#63b5b3"},
+  "Rust": {"label": "RUST", "design": "tug", "hull": "#a34e44", "trim": "#d9825b"},
+  "JavaScript": {"label": "JS", "design": "freighter", "hull": "#8a753b", "trim": "#dfbe62"},
+  "TypeScript": {"label": "TS", "design": "freighter", "hull": "#346888", "trim": "#85b5cf"},
+  "C#": {"label": "C#", "design": "steam", "hull": "#675687", "trim": "#b6a0d0"},
+  "C": {"label": "C", "design": "freighter", "hull": "#537587", "trim": "#9bbdcb"},
+  "Go": {"label": "GO", "design": "tug", "hull": "#3e8292", "trim": "#9bc8c9"},
+  "Ruby": {"label": "RUBY", "design": "steam", "hull": "#9c4355", "trim": "#dc8b8c"},
+  "Shell": {"label": "SHELL", "design": "tug", "hull": "#4d725e", "trim": "#a5c39a"},
+  "HTML": {"label": "HTML", "design": "sail", "hull": "#a65d42", "trim": "#e5a07a"},
+  "CSS": {"label": "CSS", "design": "sail", "hull": "#635e91", "trim": "#aaa4d0"},
+  "Jupyter Notebook": {"label": "IPYNB", "design": "steam", "hull": "#9c6940", "trim": "#dfad68"},
+  "Objective-C": {"label": "OBJ-C", "design": "freighter", "hull": "#54768e", "trim": "#a8c6d9"},
+  "fallbacks": [
+    {"design": "steam", "hull": "#776087", "trim": "#bd9ab5"},
+    {"design": "freighter", "hull": "#527363", "trim": "#aac197"},
+    {"design": "sail", "hull": "#417d85", "trim": "#9ac4bf"},
+    {"design": "tug", "hull": "#a16b4f", "trim": "#ddae77"}
+  ]
+}

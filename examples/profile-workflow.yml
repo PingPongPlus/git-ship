@@ -1,0 +1,55 @@
+# Copy to .github/workflows/git-ship.yml in YOUR_USERNAME/YOUR_USERNAME.
+# main tracks development; pin a reviewed full commit SHA for a stable installation.
+name: Git Ship
+on:
+  schedule:
+    - cron: '23 3 * * *' # 03:23 UTC, subject to GitHub scheduling delays.
+  workflow_dispatch:
+    inputs:
+      period:
+        description: Activity and cargo data window
+        type: choice
+        options: [day, week, month]
+        default: month
+
+permissions:
+  contents: read
+
+concurrency:
+  group: git-ship-output
+  cancel-in-progress: false
+
+jobs:
+  fleet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Generation only reads public data; publishing below needs write access.
+    # GitHub permissions apply to the whole job, not individual steps.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Generate fleet
+        id: ship
+        uses: PingPongPlus/git-ship@main
+        with:
+          username: ${{ github.repository_owner }}
+          output-dir: git-ship-output
+          token: ${{ github.token }}
+          # Scheduled default: repository variable GIT_SHIP_DATA_WINDOW, or month.
+          data-window: ${{ inputs.period || vars.GIT_SHIP_DATA_WINDOW || 'month' }}
+          # config: .github/git-ship.toml
+      - name: Publish only images to output branch
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SHIP_PUBLISH_SCRIPT: ${{ steps.ship.outputs.publish-script }}
+          SHIP_ASSETS: ${{ steps.ship.outputs.output-dir }}
+          SHIP_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          python "$SHIP_PUBLISH_SCRIPT" \
+            --assets-dir "$SHIP_ASSETS" \
+            --repository "$GITHUB_REPOSITORY" \
+            --default-branch "$SHIP_DEFAULT_BRANCH"

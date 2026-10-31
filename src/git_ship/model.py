@@ -1,0 +1,233 @@
+"""Credential-free normalized public data and the documented ranking formulas."""
+
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import asdict, dataclass
+from datetime import UTC, date, datetime, time, timedelta
+from fnmatch import fnmatchcase
+from pathlib import Path
+from typing import Any
+
+from .config import Config
+
+CARGO_LIMIT = 10
+
+
+@dataclass(frozen=True)
+class Commit:
+    sha: str
+    author: str
+    committed_at: str
+    languages: tuple[str, ...]
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> Commit:
+        sha = raw["sha"]
+        if not isinstance(sha, str) or not re.fullmatch(r"[0-9a-f]{40}", sha):
+            raise ValueError("commit sha must be a full 40-character lowercase SHA")
+        author = raw["author"]
+        if not isinstance(author, str) or not author or not Config(username=author).username:
+            raise ValueError("commit author must be a GitHub login")
+        parse_timestamp(raw["committed_at"])
+        languages = raw["languages"]
+        if not isinstance(languages, (list, tuple)) or not all(
+            isinstance(name, str) and name for name in languages
+        ):
+            raise ValueError("commit languages must be an array of language names")
+        return cls(sha, author, raw["committed_at"], tuple(sorted(set(languages))))
+
+
+@dataclass(frozen=True)
+class Repository:
+    name: str
+    owner: str
+    fork: bool
+    archived: bool
+    pushed_at: str | None
+    languages: dict[str, int]
+    commits: tuple[Commit, ...] | None = None
+
+
+@dataclass(frozen=True)
+class Profile:
+    username: str
+    observed_on: date
+    repositories: tuple[Repository, ...]
+    contributions: int | None = None
+    warnings: tuple[str, ...] = ()
+    observed_at: str | None = None
+    cargo_window: int | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Profile:
+        if data.get("schema_version") not in (1, 2):
+            raise ValueError("unsupported profile schema; expected schema_version = 1 or 2")
+        config = Config(username=data["username"])
+        observed = date.fromisoformat(data["observed_on"])
+        repos = []
+        for raw in data["repositories"]:
+            langs = raw["languages"]
+            if not isinstance(langs, dict) or any(
+                not isinstance(k, str) or type(v) is not int or v < 0 for k, v in langs.items()
+            ):
+                raise ValueError("language byte counts must be nonnegative integers")
+            if type(raw["fork"]) is not bool or type(raw["archived"]) is not bool:
+                raise ValueError("repository fork/archived fields must be booleans")
+            if not isinstance(raw["name"], str) or not isinstance(raw["owner"], str):
+                raise ValueError("repository name and owner must be strings")
+            if raw["pushed_at"] is not None:
+                parse_timestamp(raw["pushed_at"])
+            commits = raw.get("commits")
+            if commits is not None:
+                if not isinstance(commits, (list, tuple)):
+                    raise ValueError("repository commits must be null or an array")
+                commits = tuple(Commit.from_dict(c) for c in commits)
+            repos.append(
+                Repository(
+                    raw["name"],
+                    raw["owner"],
+                    raw["fork"],
+                    raw["archived"],
+                    raw["pushed_at"],
+                    langs,
+                    commits,
+                )
+            )
+        total = data.get("contributions")
+        if total is not None and (type(total) is not int or total < 0):
+            raise ValueError("contributions must be null or a nonnegative integer")
+        warnings = data.get("warnings", [])
+        if not isinstance(warnings, list) or not all(isinstance(w, str) for w in warnings):
+            raise ValueError("warnings must be an array of strings")
+        instant = data.get("observed_at")
+        if instant is not None and parse_timestamp(instant).astimezone(UTC).date() != observed:
+            raise ValueError("observed_at must be on observed_on in UTC")
+        cargo_window = data.get("cargo_window")
+        if cargo_window is not None and (
+            type(cargo_window) is not int or not 1 <= cargo_window <= 365
+        ):
+            raise ValueError("cargo_window must be null or an integer in 1..365")
+        return cls(
+            config.username, observed, tuple(repos), total, tuple(warnings), instant, cargo_window
+        )
+
+    @classmethod
+    def read(cls, path: Path) -> Profile:
+        try:
+            return cls.from_dict(json.loads(path.read_text(encoding="utf-8")))
+        except (KeyError, TypeError, AttributeError, ValueError) as exc:
+            raise ValueError(f"invalid normalized profile {path.name}: {exc}") from None
+
+    def write(self, path: Path) -> None:
+        data = asdict(self)
+        data["schema_version"] = 2
+        data["observed_on"] = self.observed_on.isoformat()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def parse_timestamp(value: str) -> datetime:
+    result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if result.tzinfo is None:
+        raise ValueError("timestamps must include a timezone")
+    return result
+
+
+def selected(repo: Repository, username: str, config: Config) -> bool:
+    if repo.owner.casefold() != username.casefold():
+        return False
+    if repo.fork and not config.include_forks:
+        return False
+    if repo.archived and not config.include_archived:
+        return False
+    names = (repo.name.casefold(), f"{repo.owner}/{repo.name}".casefold())
+
+    def matches(patterns: tuple[str, ...]) -> bool:
+        return any(fnmatchcase(n, p.casefold()) for n in names for p in patterns)
+
+    return (not config.include or matches(config.include)) and not matches(config.exclude)
+
+
+@dataclass(frozen=True)
+class Language:
+    name: str
+    bytes: int
+    share: float
+    activity: float
+    cargo: int | None = None
+
+
+def observation_time(profile: Profile, config: Config) -> datetime:
+    if config.observation_date is not None:
+        return datetime.combine(config.observation_date, time.max, UTC)
+    if profile.observed_at is not None:
+        return parse_timestamp(profile.observed_at)
+    return datetime.combine(profile.observed_on, time.max, UTC)
+
+
+def commit_window(observed: datetime, days: int) -> tuple[datetime, datetime]:
+    """Rolling UTC time window, with an exclusive start and inclusive end."""
+    return observed - timedelta(days=days), observed
+
+
+def rank_languages(profile: Profile, config: Config) -> tuple[Language, ...]:
+    counts: dict[str, int] = {}
+    recent: dict[str, float] = {}
+    commit_shas: dict[str, set[str]] = {}
+    missing_commits: set[str] = set()
+    observed = observation_time(profile, config)
+    start, end = commit_window(observed, config.activity_window)
+    cached_window_changed = profile.cargo_window is not None and (
+        profile.cargo_window != config.activity_window
+        or profile.observed_at is None
+        or observed != parse_timestamp(profile.observed_at)
+    )
+    for repo in profile.repositories:
+        if not selected(repo, profile.username, config):
+            continue
+        age = (
+            (observed - parse_timestamp(repo.pushed_at)).total_seconds() / 86400
+            if repo.pushed_at
+            else None
+        )
+        recency = (
+            max(0.0, 1 - age / config.activity_window) if age is not None and age >= 0 else 0.0
+        )
+        for name, count in repo.languages.items():
+            counts[name] = counts.get(name, 0) + count
+            recent[name] = recent.get(name, 0.0) + count * recency
+            if count > 0 and (repo.commits is None or cached_window_changed):
+                missing_commits.add(name)
+        for commit in repo.commits or ():
+            if commit.author.casefold() != profile.username.casefold():
+                continue
+            if not start < parse_timestamp(commit.committed_at) <= end:
+                continue
+            for name in commit.languages:
+                if repo.languages.get(name, 0) > 0:
+                    commit_shas.setdefault(name, set()).add(commit.sha)
+    total = sum(counts.values())
+    cargo: dict[str, int | None] = {
+        name: min(CARGO_LIMIT, len(commit_shas.get(name, ()))) for name in counts
+    }
+    for name in missing_commits:
+        if len(commit_shas.get(name, ())) < CARGO_LIMIT:
+            cargo[name] = None
+    return tuple(
+        Language(
+            name,
+            count,
+            count / total,
+            recent[name] / count,
+            cargo[name],
+        )
+        for name, count in sorted(counts.items(), key=lambda x: (-x[1], x[0].casefold()))
+        if count > 0
+    )
+
+
+def global_activity(profile: Profile) -> float:
+    """Unknown contributions use the peaceful baseline; never invent a total."""
+    return min(profile.contributions or 0, 1000) / 1000
