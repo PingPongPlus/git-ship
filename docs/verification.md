@@ -3,10 +3,11 @@
 Local verification: **2026-10-31**, macOS arm64, Python **3.15.0**, Pillow **13.0.0**.
 CI covers Python **3.11/3.15** and runs the root composite action with Python **3.13**.
 The public destination is [PingPongPlus/git-ship](https://github.com/PingPongPlus/git-ship).
-This revision is on `dynamic-ships`; callers can use
-`PingPongPlus/git-ship@dynamic-ships` or pin its tested commit SHA. The default
-branch is unchanged. No `v1` or Marketplace release is claimed. Hosted results
-are available under the repository's Actions tab.
+The recorded checks below cover the `dynamic-ships` baseline (`4b01e6d`). The
+`shipinclude1year` branch adds a rolling 365-day preset; that new preset is not
+covered by these recorded checks. The default branch is unchanged. No `v1` or
+Marketplace release is claimed. Hosted results are available under the
+repository's Actions tab.
 
 ## Commands and results
 
@@ -45,7 +46,7 @@ Ordinary tests never depend on GitHub availability or write to a remote service.
   qualifying languages means a lighthouse-only scene.
 - Only selected public, owned repository/default-branch history is queried. Primary
   authors, UTC committer timestamps, deletes and renames are handled explicitly.
-- Live periods are rolling 24-hour, 7-day or 30-day windows. Tests at 03:23 UTC include
+- Live periods are rolling 24-hour, 7-day, 30-day or 365-day windows. Tests at 03:23 UTC include
   yesterday's eligible commits, exclude the exact start boundary and future commits,
   and verify the same interval is passed to the optional contribution query.
 - Commit/file pagination follows `Link` headers. Scanning considers every candidate
@@ -76,7 +77,7 @@ the output window, lighthouse-only daily fixture, generated paths and workspace-
 rejection. Hosted CI additionally invokes **`uses: ./`**, with `data-window: week`.
 
 The copy-paste caller workflow schedules **daily** independently of the selected data
-window. Manual execution exposes day/week/month choices; nightly runs read the
+window. Manual execution exposes day/week/month/year choices; nightly runs read the
 optional `GIT_SHIP_DATA_WINDOW` repository variable, defaulting to month. No owner,
 profile repository or account credential is hard-coded in generation/publication.
 

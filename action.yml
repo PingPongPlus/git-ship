@@ -18,7 +18,7 @@ inputs:
     required: false
     default: ''
   data-window:
-    description: Rolling activity/cargo period; day (1), week (7), month (30); empty uses config
+    description: Rolling activity/cargo period; day (1), week (7), month (30), year (365); empty uses config
     required: false
     default: ''
   token:
