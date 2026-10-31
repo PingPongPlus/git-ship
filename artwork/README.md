@@ -26,8 +26,10 @@ The atlas itself is independent of scene positions.
 
 The optional lighthouse ray starts at the lantern and changes projected reach,
 tilt and fan width over one exact loop, creating the impression of a rotating
-lamp. Sparse warm pixels and stepped outlines preserve binary alpha. The ray
-is drawn behind all existing artwork; no sea or sky background is added. Set
+lamp. It fills empty space with solid yellow and is applied after the scene's
+artwork. Where it crosses an existing opaque pixel, RGB is blended at 30% yellow
+and 70% original color so both the ray and underlying art remain visible. Alpha
+stays binary for exact GIF export; pixels outside the cone are unchanged. Set
 `lighthouse_beam = false` in TOML, `lighthouse-beam: 'false'` in the action, or
 use `--no-lighthouse-beam` to disable it without changing the lantern blink.
 

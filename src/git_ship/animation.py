@@ -12,7 +12,6 @@ from .layout import Scene, Ship
 from .sprites import (
     FOAM,
     FUNNEL_ORIGINS,
-    GOLD,
     SMOKE,
     SMOKE_LIGHT,
     SMOKE_SHADE,
@@ -24,8 +23,9 @@ from .sprites import (
 
 TAU = math.tau
 LIGHT_ORIGIN = (38, 47)
-BEAM_LIGHT = "#f4dda0"
-BEAM_SHADE = "#dcb86b"
+BEAM_LIGHT = "#ffe15b"
+BEAM_RGB = (255, 225, 91)
+BEAM_TINT = 0.3
 
 
 @dataclass(frozen=True)
@@ -77,7 +77,7 @@ def smoke_puff(d: ImageDraw.ImageDraw, x: int, bottom: int, age: float) -> None:
 
 
 def lighthouse_beam(image: Image.Image, t: float) -> None:
-    """Project one rotating fan, using sparse pixels instead of GIF alpha fading."""
+    """Fill empty space yellow and blend that light over existing artwork."""
     angle = TAU * (t % 1)
     facing = math.cos(angle)
     depth = abs(facing)
@@ -98,16 +98,23 @@ def lighthouse_beam(image: Image.Image, t: float) -> None:
         return
     left, top, right, bottom = bounds
     pixels, inside = image.load(), mask.load()
-    # A fixed world-space pattern avoids crawling noise as the fan sweeps. Only
-    # two of sixteen pixels are lit; the rest remain genuinely transparent.
+    # GIF supports binary alpha. Composite the translucent yellow onto existing
+    # colors here, preserving the exact same appearance in GIF and PNG. A fixed
+    # blend gives each art color one lit counterpart across the entire loop.
     for py in range(top, bottom):
-        for px in range(left + (-(left + py) % 4), right, 4):
-            if py % 2 == 0 and inside[px, py]:
-                pixels[px, py] = (244, 221, 160, 255)
-    d = ImageDraw.Draw(image)
-    d.line((vertices[1], vertices[0], vertices[2]), fill=BEAM_SHADE)
-    # A short bright center at the lantern keeps the emission point readable.
-    d.line((vertices[0], (x + round(reach * 0.12), y + round((tip_y - y) * 0.12))), fill=GOLD)
+        for px in range(left, right):
+            if not inside[px, py]:
+                continue
+            previous = pixels[px, py]
+            color = (
+                tuple(
+                    round(base * (1 - BEAM_TINT) + light * BEAM_TINT)
+                    for base, light in zip(previous[:3], BEAM_RGB, strict=True)
+                )
+                if previous[3]
+                else BEAM_RGB
+            )
+            pixels[px, py] = (*color, 255)
 
 
 class Animator:
@@ -123,8 +130,6 @@ class Animator:
         t %= 1
         image = Image.new("RGBA", (WIDTH, HEIGHT))
         d = ImageDraw.Draw(image)
-        if self.config.lighthouse_beam:
-            lighthouse_beam(image, t)
         image.alpha_composite(self.lights[int(math.sin(TAU * t * 2) > -0.55)], (17, 27))
         for j, (x, y) in enumerate(((15, 106), (51, 105))):
             p = (t * 2 + j * 0.5) % 1
@@ -153,6 +158,8 @@ class Animator:
                         smoke_puff(d, sx, bottom, p)
             # Cargo and the hull occlude smoke drifting behind them.
             image.alpha_composite(sprite, (m.x, m.y))
+        if self.config.lighthouse_beam:
+            lighthouse_beam(image, t)
         if self.config.scale != 1:
             image = image.resize(
                 (WIDTH * self.config.scale, HEIGHT * self.config.scale), Image.Resampling.NEAREST

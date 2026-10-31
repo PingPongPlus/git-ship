@@ -4,14 +4,14 @@
   "frames": 100,
   "fps": 10,
   "duration_seconds": 10.0,
-  "gif_bytes": 825266,
-  "min_transparent_fraction": 0.83490625,
+  "gif_bytes": 816046,
+  "min_transparent_fraction": 0.747375,
   "max_transparent_fraction": 0.857734375,
   "decoded_frames_match": true,
   "activity_window_days": 30,
   "layout_seed": "demo",
   "lighthouse_beam": true,
-  "png_bytes": 6495,
+  "png_bytes": 5914,
   "languages": [
     {
       "name": "Java",

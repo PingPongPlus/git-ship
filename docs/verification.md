@@ -1,6 +1,6 @@
 # Verification record
 
-Local verification: **2026-10-31**, macOS arm64, Python **3.15.0**, Pillow **13.0.0**.
+Local verification: **2026-11-01**, macOS arm64, Python **3.15.0**, Pillow **13.0.0**.
 CI covers Python **3.11/3.15** and runs the root composite action with Python **3.13**.
 The public destination is [PingPongPlus/git-ship](https://github.com/PingPongPlus/git-ship).
 This revision targets `main` and retains the rolling 365-day preset. It fixes
@@ -17,7 +17,7 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **92 passed** in 5.43 seconds, with no live API required. |
+| `pytest -q` | **94 passed** in 5.83 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
@@ -99,10 +99,13 @@ the cap. This audit read live data; ordinary tests remain offline.
 ## Lighthouse ray contracts
 
 The ray originates at the lantern and rotates once per loop, changing projected
-length, tilt and fan width. Sparse warm pixels and stepped outlines preserve
-binary alpha, and every existing opaque ship/lighthouse/wave pixel takes
-precedence. Tests cover its exact loop, changing projection, disable setting and
-exact decoded GIF cleanup. `lighthouse_beam = false`, `--no-lighthouse-beam`, or
+length, tilt and fan width. It is applied after all scene artwork. Empty pixels
+inside the cone become solid yellow; existing opaque pixels receive an RGB tint
+of 30% yellow and 70% original color. Alpha remains binary, preserving the same
+appearance in GIF without discarding the underlying artwork. Pixels outside the
+cone are unchanged. Tests cover its exact loop, changing projection, solid fill,
+color blending, disable setting and exact decoded GIF cleanup.
+`lighthouse_beam = false`, `--no-lighthouse-beam`, or
 the action input `lighthouse-beam: 'false'` disables the ray while retaining the
 lantern blink. The default is enabled.
 
@@ -135,12 +138,19 @@ Fixture: `src/git_ship/assets/demo.json`, observed on **2026-10-01**.
 | Loop | Infinite; no extra closing-frame hold |
 | Layout seed | `demo` |
 | Lighthouse ray | Enabled |
-| GIF | **825,266 bytes**, below 2 MB target |
-| PNG | **6,495 bytes**, genuine RGBA |
-| Fully transparent pixels over every frame | **83.490625%–85.7734375%** |
+| GIF | **816,046 bytes**, below 2 MB target |
+| PNG | **5,914 bytes**, genuine RGBA |
+| Fully transparent pixels over every frame | **74.7375%–85.7734375%** |
 | Alpha / palette / disposal | Binary alpha, one shared palette, transparent index 0, disposal 2 |
 | Decoded comparison | All 100 frames exactly match intended alpha and visible RGB |
 | Cargo, in report order | JAVA 7 / C++ 20 / PYTHON 6 / RUST 4 / JS 5 / TS 2 |
+
+The solid ray intentionally occupies otherwise empty pixels while sweeping,
+reducing the demo's minimum transparency to about 74.74%. Tests continue to
+require at least 80% transparency for the fleet with the ray disabled. With the
+ray enabled, exact binary alpha, palette colors and decoded cleanup remain
+verified. The regenerated contact sheet was inspected for readable Java, Rust
+and JavaScript artwork under the yellow tint.
 
 Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 `contact-sheet.png`, `preview.html`, `examples/reduced-motion.html`, and

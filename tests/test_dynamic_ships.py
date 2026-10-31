@@ -148,12 +148,13 @@ def test_full_motion_envelopes_fit_and_remain_disjoint_across_many_layouts(count
             assert a[2] < b[0] or b[2] < a[0] or a[3] < b[1] or b[3] < a[1]
 
 
-def test_six_fully_loaded_ships_keep_transparency_and_exact_gif_cleanup(tmp_path):
-    config = Config(seed="six-full-ships", scale=1, duration=2)
+@pytest.mark.parametrize("beam", [False, True])
+def test_six_fully_loaded_ships_keep_transparency_and_exact_gif_cleanup(tmp_path, beam):
+    config = Config(seed="six-full-ships", scale=1, duration=2, lighthouse_beam=beam)
     scene = layout(active_profile(count=6, cargo=20), config)
     report, _ = export(scene, config, tmp_path)
     assert len(report["languages"]) == 6
     assert all(language["cargo"] == 20 for language in report["languages"])
-    assert report["min_transparent_fraction"] > 0.8
+    assert report["min_transparent_fraction"] > (0.7 if beam else 0.8)
     assert report["decoded_frames_match"]
     assert report["layout_seed"] == config.seed
