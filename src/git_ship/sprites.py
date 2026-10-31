@@ -117,13 +117,14 @@ def ship_sprite(style: Style, width: int, cargo: int = 0) -> Image.Image:
         rect((mid - 5, 36, mid + 6, 38), CREAM)
 
     # Every one of these containers corresponds to one distinct authored commit.
-    # Two columns of five fit a reserved aft-deck area on all four boat designs.
+    # Three columns of seven (last row partially filled) fit twenty containers
+    # in a reserved aft-deck bank, without changing box size as the count grows.
     for index in range(cargo):
-        x = 3 + (index % 2) * 9
-        y = 33 - (index // 2) * 5
+        x = 3 + (index % 3) * 6
+        y = 34 - (index // 3) * 4
         color = (style.trim, "#ad655b", "#668fa5")[index % 3]
-        rect((x, y, x + 7, y + 4), INK)
-        rect((x + 1, y + 1, x + 6, y + 3), color)
+        rect((x, y, x + 4, y + 3), INK)
+        rect((x + 1, y + 1, x + 3, y + 2), color)
 
     # Wide flat hull panels make the names part of the boat's silhouette.
     if width < 49:

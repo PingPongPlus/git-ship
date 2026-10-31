@@ -14,12 +14,13 @@ LABEL = re.compile(r"[A-Z0-9+# .-]{1,6}\Z")
 HEX = re.compile(r"#[0-9a-fA-F]{6}\Z")
 WIDTH, HEIGHT = 400, 160
 DATA_WINDOWS = {"day": 1, "week": 7, "month": 30}
+MAX_SHIPS = 6
 
 
 @dataclass(frozen=True)
 class Config:
     username: str = ""
-    ships: int = 5
+    ships: int = MAX_SHIPS
     scale: int = 2
     fps: int = 10
     duration: int = 10
@@ -39,7 +40,7 @@ class Config:
         ):
             raise ValueError("username must be a GitHub login (1–39 letters, digits or hyphens)")
         for name, low, high in (
-            ("ships", 0, 5),
+            ("ships", 0, MAX_SHIPS),
             ("scale", 1, 4),
             ("duration", 2, 20),
             ("activity_window", 1, 365),

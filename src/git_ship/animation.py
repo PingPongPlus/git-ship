@@ -102,7 +102,6 @@ class Animator:
                     # below the keel. Their gaps keep the sea fully transparent.
                     y = m.y + (52, 55, 52)[j] + int(p * 2)
                     wave(d, x, y, 11 + round(5 * math.sin(math.pi * p)), int(p * 4) % 2)
-            image.alpha_composite(sprite, (m.x, m.y))
             if ship.style.design in ("steam", "tug"):
                 funnel, mouth = FUNNEL_ORIGINS[ship.style.design]
                 # Three complete particle cycles per loop; no alpha fading or matte.
@@ -112,6 +111,8 @@ class Animator:
                         sx = m.x + funnel + 3 - round(p * 7)
                         bottom = m.y + mouth - 1 - round(p * 11)
                         smoke_puff(d, sx, bottom, p)
+            # Cargo and the hull occlude smoke drifting behind them.
+            image.alpha_composite(sprite, (m.x, m.y))
         if self.config.scale != 1:
             image = image.resize(
                 (WIDTH * self.config.scale, HEIGHT * self.config.scale), Image.Resampling.NEAREST

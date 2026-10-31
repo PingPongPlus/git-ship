@@ -177,7 +177,11 @@ class GitHubClient:
     def load_cargo(
         self, profile: Profile, config: Config, observed: datetime
     ) -> tuple[Repository, ...]:
-        targets = {language.name for language in rank_languages(profile, config)[: config.ships]}
+        if config.ships == 0:
+            return profile.repositories
+        # Quiet high-byte languages cannot consume the visible-ship limit.
+        # Consider every candidate until enough active languages are proven.
+        targets = {language.name for language in rank_languages(profile, config)}
         shas: dict[str, set[str]] = {name: set() for name in targets}
         repositories = list(profile.repositories)
         start, end = commit_window(observed, config.activity_window)
@@ -243,6 +247,14 @@ class GitHubClient:
                     continue
                 break
             repositories[index] = replace(repo, commits=tuple(records))
+            ranked = rank_languages(replace(profile, repositories=tuple(repositories)), config)
+            active = [language for language in ranked if (language.cargo or 0) > 0]
+            if len(active) >= config.ships:
+                cutoff = ranked.index(active[config.ships - 1])
+                # Stop only when all higher-ranked candidates have known data;
+                # remaining repositories cannot replace the chosen active fleet.
+                if all(language.cargo is not None for language in ranked[: cutoff + 1]):
+                    break
         return tuple(repositories)
 
     def contributions(self, username: str, observed: datetime, days: int = 30) -> int | None:

@@ -11,16 +11,20 @@ horizontally; text is painted at its native size and never stretched. The concep
 reference is never loaded by the renderer. These sources and generated demo art
 are covered by the project's MIT license; references are retained for provenance.
 
-Cargo uses a reserved aft-deck area on every design: two columns of five
-containers, each representing one distinct authored commit in the selected data
-window. Zero known commits means no containers; there are no decorative cargo
-blocks. The five-language atlas uses the same fixture counts as the CLI demo,
-including the gold JavaScript (`JS`) freighter. Cargo stays inside the sprite and
-moves with the hull; labels, funnels, cabin windows and sails remain unobstructed.
+Cargo uses a reserved aft-deck bank on every design: three columns, up to seven
+tiers and twenty containers total. Each constant-size 5×4-pixel container
+represents one distinct authored commit in the selected data window. Zero or
+unknown activity means the entire ship is hidden. There are no decorative cargo
+blocks. The six-language atlas uses the CLI fixture counts, including the gold JS
+freighter, TS and a C++ ship with twenty containers. Cargo stays inside the sprite;
+smoke passes behind it, and labels, cabins, funnels and sails remain unobstructed.
+Normal renders choose fresh placements within six safe areas. To reproduce the
+delivered demo, use `--seed demo`; this fixes positions while keeping the loop
+periodic. The atlas itself is independent of scene positions.
 
 Regenerate the editable sprite atlas and demo with:
 
 ```sh
 python scripts/sprite_atlas.py
-git-ship render --demo --preview --output-dir examples/demo
+git-ship render --demo --seed demo --preview --output-dir examples/demo
 ```

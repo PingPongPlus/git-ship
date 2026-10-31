@@ -18,7 +18,7 @@ def test_ranking_and_repository_filters(demo):
     profile = replace(demo, repositories=demo.repositories + extra)
     config = Config(include_archived=False)
     ranked = rank_languages(profile, config)
-    assert [x.name for x in ranked] == ["Java", "C++", "Python", "Rust", "JavaScript"]
+    assert [x.name for x in ranked] == ["Java", "C++", "Python", "Rust", "JavaScript", "TypeScript"]
     assert sum(x.share for x in ranked) == pytest.approx(1)
     assert ranked[0].activity == pytest.approx(0.95)
     assert [x.name for x in rank_languages(profile, replace(config, include=("CH*",)))] == [
@@ -26,7 +26,7 @@ def test_ranking_and_repository_filters(demo):
     ]
     assert [
         x.name for x in rank_languages(profile, replace(config, exclude=("git-ship/har*",)))
-    ] == ["Python", "Rust", "JavaScript"]
+    ] == ["Python", "Rust", "JavaScript", "TypeScript"]
     assert rank_languages(profile, replace(config, include_forks=True))[0].name == "Ruby"
 
 
@@ -57,7 +57,7 @@ def test_normalized_roundtrip_and_invalid_counts(demo, tmp_path):
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"ships": 6},
+        {"ships": 7},
         {"ships": True},
         {"fps": 12},
         {"scale": 0},
@@ -93,4 +93,4 @@ def test_toml_precedence_and_unknown_keys(tmp_path):
 
 
 def test_example_config_loads():
-    assert load_config(Path("examples/config.toml")).ships == 5
+    assert load_config(Path("examples/config.toml")).ships == 6

@@ -107,7 +107,7 @@ def test_actual_action_entrypoint_and_outputs(tmp_path):
     assert proc.returncode == 0, proc.stderr
     report = json.loads(proc.stdout)
     assert report["activity_window_days"] == 1
-    assert all(language["cargo"] == 0 for language in report["languages"])
+    assert report["languages"] == []  # A quiet day shows only the lighthouse.
     outputs = dict(line.split("=", 1) for line in (tmp_path / "outputs").read_text().splitlines())
     assert Path(outputs["gif"]).is_file() and Path(outputs["png"]).is_file()
     assert Path(outputs["publish-script"]).name == "publish_assets.py"

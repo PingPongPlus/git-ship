@@ -1,11 +1,13 @@
-"""Deterministic slots bound the complete motion, smoke and wake envelopes."""
+"""Fresh per-render placements within six non-overlapping motion envelopes."""
 
 from __future__ import annotations
 
 import math
+import random
+import secrets
 from dataclasses import dataclass
 
-from .config import Config
+from .config import WIDTH, Config
 from .model import Language, Profile, global_activity, rank_languages
 from .sprites import Style, language_style, stable_seed
 
@@ -27,29 +29,40 @@ class Scene:
     username: str
     ships: tuple[Ship, ...]
     energy: float
+    layout_seed: str = ""
 
 
 def layout(profile: Profile, config: Config) -> Scene:
-    languages = rank_languages(profile, config)[: config.ships]
+    # Filter before limiting: an inactive high-byte language must never hide an
+    # active language farther down the ranking. Unknown commit data is hidden.
+    languages = tuple(
+        language for language in rank_languages(profile, config) if (language.cargo or 0) > 0
+    )[: config.ships]
     energy = global_activity(profile)
-    seed = stable_seed(str(config.seed) if config.seed is not None else profile.username.casefold())
-    slot = 318 / max(1, len(languages))
+    layout_seed = str(config.seed) if config.seed is not None else secrets.token_hex(16)
+    rng = random.Random(stable_seed(layout_seed))
+    identity = profile.username.casefold()
+    # Two rows leave room for the full 56-pixel sprite, wake, bob and smoke.
+    # Three wide columns preserve native lettering and cargo at six ships.
+    cells = rng.sample([(column, row) for row in range(2) for column in range(3)], len(languages))
+    column_width = (WIDTH - 86) / 3
     ships = []
-    # Hull baselines, with enough room for the tallest mast and rising smoke.
-    baselines = (121, 91, 129, 108, 125)
-    for i, language in enumerate(languages):
-        width = min(round(44 + 16 * math.sqrt(language.share)), int(slot) - 20, 62)
-        phase = ((seed >> (i * 8)) % 256) / 256
+    for language, (column, row) in zip(languages, cells, strict=True):
+        width = min(round(44 + 16 * math.sqrt(language.share)), 62)
+        left = 80 + column * column_width
+        x = rng.randint(math.ceil(left + 8), math.floor(left + column_width - width - 8))
+        y = (9 if row == 0 else 83) + rng.randrange(6)
+        phase = (stable_seed(f"{identity}:{language.name}") % 1024) / 1024
         ships.append(
             Ship(
                 language,
                 language_style(language.name, config),
-                round(76 + i * slot + (slot - width) / 2),
-                baselines[i] - 52,
+                x,
+                y,
                 width,
                 phase,
                 2.5 + 1.5 * language.activity,
                 1.2 + energy * 0.8,
             )
         )
-    return Scene(profile.username, tuple(ships), energy)
+    return Scene(profile.username, tuple(ships), energy, layout_seed)
