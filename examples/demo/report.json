@@ -4,52 +4,61 @@
   "frames": 100,
   "fps": 10,
   "duration_seconds": 10.0,
-  "gif_bytes": 695377,
-  "min_transparent_fraction": 0.873984375,
-  "max_transparent_fraction": 0.877109375,
+  "gif_bytes": 769322,
+  "min_transparent_fraction": 0.854453125,
+  "max_transparent_fraction": 0.857921875,
   "decoded_frames_match": true,
   "activity_window_days": 30,
-  "png_bytes": 4763,
+  "layout_seed": "demo",
+  "png_bytes": 5008,
   "languages": [
     {
       "name": "Java",
       "label": "JAVA",
-      "code_share": 0.296296,
+      "code_share": 0.285714,
       "activity": 0.95,
-      "width": 43,
+      "width": 53,
       "cargo": 7
     },
     {
       "name": "C++",
       "label": "C++",
-      "code_share": 0.259259,
+      "code_share": 0.25,
       "activity": 0.95,
-      "width": 43,
-      "cargo": 10
+      "width": 52,
+      "cargo": 20
     },
     {
       "name": "Python",
       "label": "PYTHON",
-      "code_share": 0.222222,
+      "code_share": 0.214286,
       "activity": 0.683333,
-      "width": 43,
+      "width": 51,
       "cargo": 6
     },
     {
       "name": "Rust",
       "label": "RUST",
-      "code_share": 0.148148,
+      "code_share": 0.142857,
       "activity": 0.45,
-      "width": 43,
+      "width": 50,
       "cargo": 4
     },
     {
       "name": "JavaScript",
       "label": "JS",
-      "code_share": 0.074074,
+      "code_share": 0.071429,
       "activity": 0.883333,
-      "width": 43,
+      "width": 48,
       "cargo": 5
+    },
+    {
+      "name": "TypeScript",
+      "label": "TS",
+      "code_share": 0.035714,
+      "activity": 0.916667,
+      "width": 47,
+      "cargo": 2
     }
   ]
 }

@@ -14,7 +14,7 @@ from .config import DATA_WINDOWS, load_config
 from .export import export
 from .github import GitHubClient, GitHubError
 from .layout import layout
-from .model import Profile
+from .model import Profile, rank_languages
 from .preview import write_preview
 
 
@@ -81,10 +81,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.cache_profile:
             profile.write(args.cache_profile)
         scene = layout(profile, config)
-        if any(ship.language.cargo is None for ship in scene.ships):
+        if config.ships and any(
+            language.cargo is None for language in rank_languages(profile, config)
+        ):
             print(
                 "git-ship: warning: cached commit data does not cover this fleet/window; "
-                "unknown cargo is omitted. Fetch a fresh profile to populate it.",
+                "ships with unknown activity are omitted. Fetch a fresh profile to populate them.",
                 file=sys.stderr,
             )
         report, frames = export(scene, config, args.output_dir)

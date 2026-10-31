@@ -17,8 +17,8 @@ def commit(number, when="2026-10-01T02:00:00Z", languages=("C++",), author="sail
     return Commit(f"{number:040x}", author, when, languages)
 
 
-def test_distinct_authored_commits_count_once_per_language_and_cap_at_ten():
-    records = tuple(commit(i, languages=("C++", "Python", "C++")) for i in range(1, 14))
+def test_distinct_authored_commits_count_once_per_language_and_cap_at_twenty():
+    records = tuple(commit(i, languages=("C++", "Python", "C++")) for i in range(1, 24))
     records += (commit(100, author="someone-else"), commit(101, when="2025-01-01T00:00:00Z"))
     repo = Repository("one", "sailor", False, False, None, {"C++": 200, "Python": 100}, records)
     profile = Profile(
@@ -28,8 +28,8 @@ def test_distinct_authored_commits_count_once_per_language_and_cap_at_ten():
         observed_at="2026-10-01T03:23:00Z",
     )
     assert {language.name: language.cargo for language in rank_languages(profile, Config())} == {
-        "C++": 10,
-        "Python": 10,
+        "C++": 20,
+        "Python": 20,
     }
     fewer = replace(profile, repositories=(replace(repo, commits=records[:3] + records[:3]),))
     assert [language.cargo for language in rank_languages(fewer, Config())] == [3, 3]
@@ -173,7 +173,7 @@ def test_live_cargo_follows_commit_pages_filters_authors_and_deduplicates(monkey
     assert len([path for path in calls if "/commits/" in path]) == 2
 
 
-def test_live_scan_stops_at_ten_cargos_without_requesting_more_pages(monkeypatch):
+def test_live_scan_stops_at_twenty_cargos_without_requesting_more_pages(monkeypatch):
     client = GitHubClient()
     repo = Repository("one", "sailor", False, False, None, {"C++": 20})
     observed = datetime(2026, 10, 1, 3, 23, tzinfo=UTC)
@@ -189,7 +189,7 @@ def test_live_scan_stops_at_ten_cargos_without_requesting_more_pages(monkeypatch
                     "author": {"login": "sailor"},
                     "commit": {"committer": {"date": "2026-09-30T18:00:00Z"}},
                 }
-                for i in range(1, 16)
+                for i in range(1, 26)
             ], {"link": '</commits?page=2>; rel="next"'}
         sha = path.split("/commits/")[1].split("?")[0]
         details.append(sha)
@@ -197,8 +197,8 @@ def test_live_scan_stops_at_ten_cargos_without_requesting_more_pages(monkeypatch
 
     monkeypatch.setattr(client, "request", request)
     result = replace(profile, repositories=client.load_cargo(profile, Config(), observed))
-    assert rank_languages(result, Config())[0].cargo == 10
-    assert len(details) == 10
+    assert rank_languages(result, Config())[0].cargo == 20
+    assert len(details) == 20
 
 
 def test_github_file_limit_fails_instead_of_silently_undercounting(monkeypatch):
@@ -216,20 +216,27 @@ def test_only_real_commit_cargo_occupies_the_reserved_deck_and_labels_stay_clear
     style = language_style(name, Config())
     for width in (43, 53, 62):
         empty = ship_sprite(style, width, 0)
-        assert empty.crop((3, 13, 20, 38)).getchannel("A").histogram()[255] == 0
-        for count in (1, 7, 10):
+        assert empty.crop((3, 10, 20, 38)).getchannel("A").histogram()[255] == 0
+        for count in (1, 7, 10, 20):
             loaded = ship_sprite(style, width, count)
-            assert loaded.crop((3, 13, 20, 38)).getchannel("A").histogram()[255] == count * 40
+            assert loaded.crop((3, 10, 20, 38)).getchannel("A").histogram()[255] == count * 20
             assert (
                 loaded.crop((0, 38, width, 56)).tobytes()
                 == empty.crop((0, 38, width, 56)).tobytes()
             )
-    for invalid in (-1, 11, True):
+    for invalid in (-1, 21, True):
         with pytest.raises(ValueError, match="cargo"):
             ship_sprite(style, 43, invalid)
 
 
-def test_javascript_is_the_fifth_demo_ship_and_every_stack_matches_commits(demo):
+def test_six_demo_ships_include_javascript_and_every_stack_matches_commits(demo):
     ships = layout(demo, Config()).ships
-    assert [ship.language.name for ship in ships] == ["Java", "C++", "Python", "Rust", "JavaScript"]
-    assert [ship.language.cargo for ship in ships] == [7, 10, 6, 4, 5]
+    assert [ship.language.name for ship in ships] == [
+        "Java",
+        "C++",
+        "Python",
+        "Rust",
+        "JavaScript",
+        "TypeScript",
+    ]
+    assert [ship.language.cargo for ship in ships] == [7, 20, 6, 4, 5, 2]

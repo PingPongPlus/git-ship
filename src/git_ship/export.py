@@ -106,6 +106,7 @@ def export(
             stream.write(b";")
         report = verify_gif(gif_path, frames, config)
         report["activity_window_days"] = config.activity_window
+        report["layout_seed"] = scene.layout_seed
         frames[0].save(root / "git-ship.png")
         report["png_bytes"] = (root / "git-ship.png").stat().st_size
         report["languages"] = [

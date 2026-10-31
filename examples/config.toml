@@ -1,6 +1,6 @@
 # All keys are optional except username for a live render.
 username = "YOUR-USERNAME" # Replace with your actual GitHub login.
-ships = 5
+ships = 6
 scale = 2
 fps = 10
 duration = 10
@@ -9,7 +9,7 @@ include_forks = false
 include_archived = true
 include = [] # Empty means all public, owned repositories.
 exclude = ["*-generated"] # Matches short names or owner/name, case-insensitively.
-# seed = "my-stable-fleet" # Defaults to the username.
+# seed = "my-stable-fleet" # Optional reproducible layout; omit for a fresh layout each run.
 # observation_date = 2026-10-01 # TOML date or ISO string; live default is today UTC.
 
 [labels]

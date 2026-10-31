@@ -12,7 +12,7 @@ from typing import Any
 
 from .config import Config
 
-CARGO_LIMIT = 10
+CARGO_LIMIT = 20
 
 
 @dataclass(frozen=True)

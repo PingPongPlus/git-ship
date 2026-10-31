@@ -1,5 +1,5 @@
 # Copy to .github/workflows/git-ship.yml in YOUR_USERNAME/YOUR_USERNAME.
-# main tracks development; pin a reviewed full commit SHA for a stable installation.
+# Feature branch; pin a reviewed full commit SHA for a stable installation.
 name: Git Ship
 on:
   schedule:
@@ -33,7 +33,7 @@ jobs:
           persist-credentials: false
       - name: Generate fleet
         id: ship
-        uses: PingPongPlus/git-ship@main
+        uses: PingPongPlus/git-ship@dynamic-ships
         with:
           username: ${{ github.repository_owner }}
           output-dir: git-ship-output
