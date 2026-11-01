@@ -45,6 +45,11 @@ def run() -> int:
                 raise ValueError("display-commits must be true or false")
             args.append("--display-commits" if commits == "true" else "--no-display-commits")
         data_window = os.environ.get("SHIP_DATA_WINDOW", "").strip().lower()
+        logos = os.environ.get("SHIP_CARGO_LOGOS", "").strip().lower()
+        if logos:
+            if logos not in ("true", "false"):
+                raise ValueError("cargo-logos must be true or false")
+            args.append("--cargo-logos" if logos == "true" else "--no-cargo-logos")
         if data_window:
             if data_window not in DATA_WINDOWS:
                 raise ValueError(f"data-window must be one of: {', '.join(DATA_WINDOWS)}")

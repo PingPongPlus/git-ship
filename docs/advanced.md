@@ -153,7 +153,7 @@ Use `huge_cargo_ship = true` in TOML, or `--no-huge-cargo-ship` to override it o
 The mode defaults to off. Its separate [demo](../examples/huge-demo/preview.html)
 shows 44 fixture commits as seven large containers and two small containers.
 
-Huge mode fetches complete commit metadata without language or file-detail calls.
+Plain huge mode fetches complete commit metadata without language or file-detail calls.
 Schema-3 caches record coverage, observation time, window and repository filters.
 Sampled fleet caches without a separately scanned `commit_total`, and schema-1/2
 caches, cannot establish an exact aggregate total: fetch a fresh profile with
@@ -161,6 +161,30 @@ caches, cannot establish an exact aggregate total: fetch a fresh profile with
 rendering its metadata-only cache; a language fleet needs a fresh classified
 profile. Changed observation/window/filters also require refetching. Explicit
 complete classified fixtures can support both modes.
+
+Enable `cargo-logos: 'true'`, CLI `--cargo-logos`, or TOML `cargo_logos = true`
+for the approved Java, Python, JavaScript, Rust, C++ and Git pixel symbols.
+Other languages use short labels on neutral panels. The option only affects
+Huge Cargo Ship mode and defaults to off; disable with `false` or `--no-cargo-logos`.
+
+Every distinct authored SHA is assigned once. Live scans classify all commits
+from changed filenames using the vendored Linguist heuristic and current
+repository language data. The language with the greatest sum of changed lines
+wins; ties use alphabetical order. Zero-line changes have weight one, and renames
+consider both filenames. Documentation-only or unclassified commits use Git.
+Deleted languages absent from current repository language data may be unclassified.
+
+Full six-commit groups get single-language containers. Leftovers fill mixed
+containers marked `MIX`; the last zero to five commits retain small boxes.
+The thirty-large-container capacity, exact hull total and overflow remain intact.
+Reports record language totals and the contents of every visible container.
+
+Logo-enabled live caches use `complete-primary-language` coverage. Plain metadata
+or sampled fleet caches need refetching with logos enabled. Primary-language
+caches support both huge variants but require refetching for the standard fleet,
+which counts multi-language commits on each affected ship. Complete classified
+fixtures assign a commit to its alphabetically first language. A classified
+duplicate SHA takes precedence over an unclassified copy.
 
 The huge report uses `mode: "huge-cargo-ship"`, `total_commits`, total and displayed
 large/small container counts, `overflow_commits`, and
@@ -176,6 +200,7 @@ large/small container counts, `overflow_commits`, and
 | `watermark` | `true` or `false`; empty uses TOML `watermark`, enabled by default |
 | `display-commits` | `true` or `false`; empty uses TOML `display_commits`, disabled by default; fleet total at bottom right |
 | `huge-cargo-ship` | `true` or `false`; empty uses TOML `huge_cargo_ship`, disabled by default |
+| `cargo-logos` | `true` or `false`; language symbols on huge containers, disabled by default |
 | `output-dir` | `git-ship-output`, a subdirectory inside the caller workspace |
 | `config` | Optional TOML path inside the caller workspace |
 | `token` | Built-in `${{ github.token }}`, supplied as `GITHUB_TOKEN` internally |
@@ -268,6 +293,7 @@ Normalized schema-3 profiles record commit coverage and repository filters along
 | `watermark` | true | Top-left Git Ship and data-period label; set false to disable |
 | `display_commits` | false | Full commit total at the bottom right of the standard fleet |
 | `huge_cargo_ship` | false | One aggregate ship with six-commit large containers; replaces the standard fleet |
+| `cargo_logos` | false | Language symbols on the huge ship; adds changed-file requests per commit |
 | `observation_date` | current instant live | ISO/TOML date; override uses end of that UTC date; offline uses its fixture instant/date |
 | `include_forks` | false | Include owned public forks when explicitly enabled |
 | `include_archived` | true | Archived code contributes by default |

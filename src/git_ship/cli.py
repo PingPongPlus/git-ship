@@ -55,6 +55,12 @@ def parser() -> argparse.ArgumentParser:
         help="show the full commit total at the bottom right in fleet mode",
     )
     render.add_argument(
+        "--cargo-logos",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="show language symbols on Huge Cargo Ship containers",
+    )
+    render.add_argument(
         "--huge-cargo-ship",
         action=argparse.BooleanOptionalAction,
         default=None,
@@ -85,6 +91,7 @@ def main(argv: list[str] | None = None) -> int:
             "lighthouse_beam",
             "watermark",
             "huge_cargo_ship",
+            "cargo_logos",
             "display_commits",
             "observation_date",
         )

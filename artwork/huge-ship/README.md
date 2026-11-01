@@ -11,3 +11,8 @@ bridge, cargo geometry and centered name remain unchanged.
 
 The animation uses the separately approved calmer wake: one gentle roll per
 loop, broad broken displacement foam, and a low bow curl without flying spray.
+
+`language-containers.png` records the six approved 27×10 original pixel designs
+in order: Java, Python, JavaScript, Rust, C++, and Git. Their editable source is
+`src/git_ship/cargo_art.py`. Other languages use a neutral panel with a short
+language label; mixed leftovers use `MIX`.

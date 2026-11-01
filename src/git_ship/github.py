@@ -150,9 +150,12 @@ class GitHubClient:
     def pages(self, path: str) -> list[dict[str, Any]]:
         return [item for page in self.iter_pages(path) for item in page]
 
-    def changed_languages(self, base: str, sha: str, available: dict[str, int]) -> tuple[str, ...]:
+    def changed_languages(
+        self, base: str, sha: str, available: dict[str, int], *, primary_only: bool = False
+    ) -> tuple[str, ...]:
         path = f"{base}/commits/{sha}?per_page=100"
         languages = set()
+        weights: dict[str, int] = {}
         seen: set[str] = set()
         file_count = 0
         while path:
@@ -171,9 +174,17 @@ class GitHubClient:
                     raise GitHubError("unexpected GitHub changed-file name")
                 # Renames can change a file's language; count each affected
                 # language once, whether the change adds, deletes or renames it.
+                affected = set()
                 for name in (entry["filename"], entry.get("previous_filename")):
                     if isinstance(name, str) and (language := file_language(name, available)):
                         languages.add(language)
+                        affected.add(language)
+                changes = entry.get("changes", 1)
+                if primary_only and (type(changes) is not int or changes < 0):
+                    raise GitHubError("unexpected GitHub changed-file line count")
+                if primary_only:
+                    for language in affected:
+                        weights[language] = weights.get(language, 0) + max(changes, 1)
             file_count += len(data["files"])
             if file_count >= 3000:
                 raise GitHubError(
@@ -181,6 +192,8 @@ class GitHubClient:
                     "exclude this repository"
                 )
             path = self.next_page(headers)
+        if primary_only:
+            return (min(weights, key=lambda n: (-weights[n], n.casefold(), n)),) if weights else ()
         return tuple(sorted(languages))
 
     @staticmethod
@@ -221,6 +234,13 @@ class GitHubClient:
                 for item in page:
                     commit = self.authored_commit(item, profile.username, start, end)
                     if commit is not None and commit.sha not in seen:
+                        if config.huge_cargo_ship and config.cargo_logos and repo.languages:
+                            commit = replace(
+                                commit,
+                                languages=self.changed_languages(
+                                    base, commit.sha, repo.languages, primary_only=True
+                                ),
+                            )
                         records.append(commit)
                         seen.add(commit.sha)
             repositories[index] = replace(repo, commits=tuple(records))
@@ -356,7 +376,7 @@ class GitHubClient:
                     continue
                 owner, name = quote(repo.owner, safe=""), quote(repo.name, safe="")
                 languages = {}
-                if not config.huge_cargo_ship:
+                if not config.huge_cargo_ship or config.cargo_logos:
                     languages, _ = self.request(f"/repos/{owner}/{name}/languages")
                 repos.append(
                     Repository(
@@ -394,7 +414,9 @@ class GitHubClient:
                 "observed_at": observed.isoformat(),
                 "cargo_window": config.activity_window,
                 "commit_coverage": (
-                    "complete-metadata" if config.huge_cargo_ship else "sampled-language"
+                    ("complete-primary-language" if config.cargo_logos else "complete-metadata")
+                    if config.huge_cargo_ship
+                    else "sampled-language"
                 ),
                 "commit_filters": commit_filter_signature(config),
                 "commit_total": commit_total,

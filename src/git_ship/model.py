@@ -13,7 +13,12 @@ from typing import Any
 from .config import Config
 
 CARGO_LIMIT = 20
-COMMIT_COVERAGE = {"sampled-language", "complete-metadata", "complete-language"}
+COMMIT_COVERAGE = {
+    "sampled-language",
+    "complete-metadata",
+    "complete-language",
+    "complete-primary-language",
+}
 
 
 def commit_filter_signature(config: Config) -> dict[str, Any]:
@@ -240,6 +245,7 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
     if profile.commit_total is None and profile.commit_coverage not in (
         "complete-metadata",
         "complete-language",
+        "complete-primary-language",
     ):
         raise ValueError(
             "aggregate commits require complete history; fetch a fresh aggregate profile"
@@ -280,6 +286,34 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
             ):
                 shas.add(commit.sha)
     return len(shas)
+
+
+def aggregate_languages(profile: Profile, config: Config) -> tuple[tuple[str, int], ...]:
+    """Assign every distinct commit once; classified fixtures break ties by name."""
+    total = aggregate_commits(profile, config)  # Validate cached window and selection first.
+    if profile.commit_coverage not in ("complete-language", "complete-primary-language"):
+        raise ValueError(
+            "cargo logos need complete language data; fetch a fresh profile with logos"
+        )
+    start, end = commit_window(observation_time(profile, config), config.activity_window)
+    candidates: dict[str, set[str]] = {}
+    for repo in profile.repositories:
+        if not selected(repo, profile.username, config):
+            continue
+        if repo.commits is None:
+            raise ValueError("cargo logos need complete language data; fetch a fresh profile")
+        for commit in repo.commits:
+            if commit.author.casefold() == profile.username.casefold() and (
+                start < parse_timestamp(commit.committed_at) <= end
+            ):
+                candidates.setdefault(commit.sha, set()).update(commit.languages)
+    counts: dict[str, int] = {}
+    for names in candidates.values():
+        name = min(names, key=lambda n: (n.casefold(), n)) if names else "Git"
+        counts[name] = counts.get(name, 0) + 1
+    if sum(counts.values()) != total:
+        raise ValueError("cargo logo history and commit total differ; fetch a fresh profile")
+    return tuple(sorted(counts.items(), key=lambda pair: (-pair[1], pair[0].casefold(), pair[0])))
 
 
 def rank_languages(profile: Profile, config: Config) -> tuple[Language, ...]:

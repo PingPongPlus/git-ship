@@ -14,7 +14,13 @@ from PIL import GifImagePlugin, Image, ImageChops
 
 from .animation import Animator
 from .config import Config
-from .huge_ship import COMMITS_PER_LARGE, HUGE_HEIGHT, HUGE_WIDTH, huge_cargo_counts
+from .huge_ship import (
+    COMMITS_PER_LARGE,
+    HUGE_HEIGHT,
+    HUGE_WIDTH,
+    huge_cargo_counts,
+    language_cargo_plan,
+)
 from .layout import Scene
 from .sprites import CARGO_GROUP_SIZE, cargo_groups
 from .watermark import commit_label, watermark_label
@@ -111,6 +117,7 @@ def export(
         report["activity_window_days"] = config.activity_window
         report["mode"] = "huge-cargo-ship" if config.huge_cargo_ship else "fleet"
         report["huge_cargo_ship"] = config.huge_cargo_ship
+        report["cargo_logos"] = config.cargo_logos and config.huge_cargo_ship
         report["commits_per_large_container"] = (
             COMMITS_PER_LARGE if config.huge_cargo_ship else CARGO_GROUP_SIZE
         )
@@ -152,6 +159,11 @@ def export(
             report["displayed_large_containers"] = counts["visible_large"]
             report["displayed_small_containers"] = counts["visible_small"]
             report["overflow_commits"] = counts["overflow_commits"]
+            if scene.cargo_languages is not None:
+                report["cargo_languages"] = dict(scene.cargo_languages)
+                report["cargo_containers"] = language_cargo_plan(
+                    scene.total_commits, scene.cargo_languages
+                )
             report["huge_ship"] = (
                 {
                     "x": scene.huge_ship.x,

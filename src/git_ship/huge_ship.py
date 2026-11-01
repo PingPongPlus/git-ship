@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import math
+from collections import Counter
 
 from PIL import Image, ImageDraw
 
+from .cargo_art import STYLES, container
 from .font import paint_text, text_width
 from .sprites import CREAM, FOAM, GOLD, INK, SHADE, WAVE, WAVE_DEEP
 
@@ -39,9 +41,53 @@ def huge_cargo_counts(total_commits: int) -> dict[str, int]:
     }
 
 
-def huge_ship_sprite(total_commits: int) -> Image.Image:
+def language_cargo_plan(total_commits: int, language_counts: tuple[tuple[str, int], ...]) -> dict:
+    """Pack full single-language boxes, then mixed leftovers, without losing weight."""
+    counts = huge_cargo_counts(total_commits)
+    if (
+        any(
+            not isinstance(name, str) or not name or type(n) is not int or n < 0
+            for name, n in language_counts
+        )
+        or len({name for name, _ in language_counts}) != len(language_counts)
+        or sum(n for _, n in language_counts) != total_commits
+    ):
+        raise ValueError("container language counts must be unique and sum to total_commits")
+    ordered = sorted(language_counts, key=lambda p: (-p[1], p[0].casefold(), p[0]))
+    large: list[dict] = []
+    leftovers: list[str] = []
+
+    def box(names):
+        content = dict(sorted(Counter(names).items()))
+        return {
+            "label": next(iter(content)) if len(content) == 1 else "Mixed",
+            "commits": len(names),
+            "languages": content,
+        }
+
+    for name, n in ordered:
+        for _ in range(min(n // COMMITS_PER_LARGE, MAX_LARGE_CONTAINERS - len(large))):
+            large.append(box([name] * COMMITS_PER_LARGE))
+        leftovers.extend([name] * (n % COMMITS_PER_LARGE))
+    full_end = len(leftovers) // COMMITS_PER_LARGE * COMMITS_PER_LARGE
+    for start in range(0, full_end, COMMITS_PER_LARGE):
+        if len(large) == MAX_LARGE_CONTAINERS:
+            break
+        large.append(box(leftovers[start : start + COMMITS_PER_LARGE]))
+    small = [box([name]) for name in leftovers[full_end:]]
+    assert len(large) == counts["visible_large"]
+    assert len(small) == counts["visible_small"]
+    return {"large": large, "small": small, "overflow_commits": counts["overflow_commits"]}
+
+
+def huge_ship_sprite(
+    total_commits: int, language_counts: tuple[tuple[str, int], ...] | None = None
+) -> Image.Image:
     """A wide low freighter, with one large container per six commits."""
     counts = huge_cargo_counts(total_commits)
+    plan = (
+        language_cargo_plan(total_commits, language_counts) if language_counts is not None else None
+    )
     image = Image.new("RGBA", (HUGE_WIDTH, HUGE_HEIGHT))
     d = ImageDraw.Draw(image)
 
@@ -152,6 +198,8 @@ def huge_ship_sprite(total_commits: int) -> Image.Image:
     for index in range(counts["visible_small"]):
         top = 70 - index * 6
         color = CONTAINERS[index % len(CONTAINERS)]
+        if plan is not None:
+            color = STYLES.get(plan["small"][index]["label"], ("#788e98", ""))[0]
         rect((245, top, 256, top + 5), HULL_EDGE)
         rect((246, top + 1, 255, top + 4), color)
         d.line((249, top + 2, 249, top + 3), fill=HULL_SHADE)
@@ -160,6 +208,11 @@ def huge_ship_sprite(total_commits: int) -> Image.Image:
     paint_text(d, (26, 85), f"{counts['total']} {unit}", SHADE)
     if counts["overflow_commits"]:
         paint_text(d, (210, 85), f"+{counts['overflow_commits']}", GOLD)
+    if plan is not None:
+        for index, box in enumerate(plan["large"]):
+            tier, offset = divmod(index, 6)
+            x, y = 72 + column_order[offset] * 28, 66 - tier * 10
+            image.alpha_composite(container(box["label"]), (x, y))
     assert set(image.getchannel("A").tobytes()) == {0, 255}
     return image
 

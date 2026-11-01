@@ -139,13 +139,17 @@ class Animator:
             scene.fleet_commits is not None
         ):
             raise ValueError("scene and commit display differ; rebuild the scene with layout()")
+        if (config.cargo_logos and config.huge_cargo_ship) != (scene.cargo_languages is not None):
+            raise ValueError("scene and cargo logos differ; rebuild the scene with layout()")
         self.scene, self.config = scene, config
         self.sprites = tuple(
             ship_sprite(s.style, s.width, s.language.cargo or 0) for s in scene.ships
         )
         self.lights = (lighthouse_sprite(False), lighthouse_sprite(True))
         self.huge_sprite = (
-            huge_ship_sprite(scene.huge_ship.total_commits) if scene.huge_ship else None
+            huge_ship_sprite(scene.huge_ship.total_commits, scene.cargo_languages)
+            if scene.huge_ship
+            else None
         )
 
     def frame(self, t: float) -> Image.Image:

@@ -44,6 +44,7 @@ jobs:
           # watermark: 'false' # Optional: hide the Git Ship and data-period label.
           # display-commits: 'true' # Optional: show the full total at the bottom right.
           # huge-cargo-ship: 'true' # Optional: one heavy ship for all commits (six per large cargo).
+          # cargo-logos: 'true' # Optional: language symbols on Huge Cargo Ship containers.
           # config: .github/git-ship.toml
       - name: Publish only images to output branch
         env:

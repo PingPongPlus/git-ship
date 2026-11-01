@@ -9,6 +9,15 @@ shuffles the existing ship types, and includes a configurable rotating lighthous
 period watermark and optional Huge Cargo Ship. No `v1` or Marketplace release is claimed. Hosted results are available under the
 repository's Actions tab.
 
+The approved optional cargo symbols are integrated behind `cargo-logos`. Tests
+pin the approved pixels, classify complete paginated history, deduplicate SHAs,
+check primary-language attribution, and preserve six-commit grouping, mixed
+remainders, exact overflow and binary-alpha GIF cleanup. A live 2026-11-01
+past-month audit of PingPongPlus used 82 requests with no warnings: 66 distinct
+commits (9 Java, 13 Python, 44 documentation/unclassified). The resulting
+100-frame GIF passed exact decoded-frame verification. It was a local audit;
+the personal profile's fleet selection was not changed.
+
 ## Commands and results
 
 Commands were run from the project root with its `.venv` unless noted.
@@ -18,14 +27,14 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **312 passed** in 9.09 seconds, with no live API required. |
+| `pytest -q` | **342 passed** in 9.64 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
 | `python scripts/sprite_atlas.py` | Generated the six-language transparent sprite atlas, including 20 C++ commits represented by five large containers. |
 | `git-ship render --demo --seed demo --preview --output-dir examples/demo` | Generated and audited the full six-ship GIF/PNG, preview and contact sheet. |
 | `git-ship render --demo --display-commits --seed counter-preview --preview --output-dir out/commit-counter` | Visually checked bottom-right `44 COMMITS`, with all 100 decoded GIF frames matching; 1,016,346 GIF bytes and 7,209 PNG bytes. |
-| `git-ship render --demo --huge-cargo-ship --seed huge-demo --preview --output-dir examples/huge-demo` | Generated and decoded-audited the separate huge-ship demo: 44 distinct fixture commits, seven large and two small containers. |
+| `git-ship render --demo --huge-cargo-ship --cargo-logos --seed huge-demo --preview --output-dir examples/huge-demo` | Generated and decoded-audited the huge demo with approved language symbols: 44 distinct commits, seven large and two small containers. |
 | Dynamic layout tests | Check quiet/unknown language filtering, active-language discovery below inactive candidates, the six-ship maximum, placement across the sea, new layouts per render and exact seed replay. |
 | Full motion-envelope tests | Checked 140 scenes: zero through six fully loaded ships across 20 seeds each; all envelopes remain inside the canvas and disjoint. |
 | Dense packing fallback test | Forced the guaranteed-fit path with six maximum-width 62-pixel ships; all full motion envelopes remain inside the canvas and disjoint. |
@@ -259,7 +268,7 @@ Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 
 Huge demo: `examples/huge-demo/`, using seed `huge-demo`, the same month fixture,
 and the new watermark wording. It exports **800×320**, **100 frames at 10 fps**,
-**10 seconds**, **932,101 GIF bytes** and **6,104 PNG bytes**. Transparency ranges
+**10 seconds**, **929,157 GIF bytes** and **6,298 PNG bytes**. Transparency ranges
 from **63.321875% to 76.6515625%** across the loop. Its larger ship has its own
 transparency checks; the standard fleet's 80% ray-off check remains unchanged.
 The 44-commit total is represented by seven six-commit containers and two small

@@ -9,6 +9,7 @@ lighthouse_beam = true # Optional rotating yellow ray; false keeps only the lant
 watermark = true # Optional top-left Git Ship label with the selected activity period.
 display_commits = false # Optional full commit total at the bottom right of the fleet.
 huge_cargo_ship = false # One heavy ship for all commits; large containers hold six commits.
+cargo_logos = false # Language symbols on the huge ship; adds per-commit language detection.
 include_forks = false
 include_archived = true
 include = [] # Empty means all public, owned repositories.

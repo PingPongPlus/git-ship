@@ -29,6 +29,7 @@ class Config:
     lighthouse_beam: bool = True
     watermark: bool = True
     huge_cargo_ship: bool = False
+    cargo_logos: bool = False
     display_commits: bool = False
     include_forks: bool = False
     include_archived: bool = True
@@ -67,6 +68,7 @@ class Config:
             "lighthouse_beam",
             "watermark",
             "huge_cargo_ship",
+            "cargo_logos",
             "display_commits",
         ):
             if type(getattr(self, name)) is not bool:

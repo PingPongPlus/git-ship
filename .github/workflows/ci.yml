@@ -41,6 +41,8 @@ jobs:
           demo: 'true'
           data-window: week
           display-commits: 'true'
+          huge-cargo-ship: 'true'
+          cargo-logos: 'true'
           output-dir: action-smoke
           token: ''
       - name: Verify action outputs

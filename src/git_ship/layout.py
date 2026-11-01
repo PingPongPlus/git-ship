@@ -8,7 +8,14 @@ import secrets
 from dataclasses import dataclass
 
 from .config import HEIGHT, WIDTH, Config
-from .model import Language, Profile, aggregate_commits, global_activity, rank_languages
+from .model import (
+    Language,
+    Profile,
+    aggregate_commits,
+    aggregate_languages,
+    global_activity,
+    rank_languages,
+)
 from .sprites import SHIP_DESIGNS, Style, language_style, stable_seed
 from .watermark import COMMIT_FOOTER_HEIGHT, WATERMARK_HEIGHT
 
@@ -42,6 +49,7 @@ class Scene:
     huge_ship: HugeShip | None = None
     total_commits: int | None = None
     fleet_commits: int | None = None
+    cargo_languages: tuple[tuple[str, int], ...] | None = None
 
 
 def placements(
@@ -117,8 +125,17 @@ def layout(profile: Profile, config: Config) -> Scene:
             if total
             else None
         )
-        return Scene(profile.username, (), energy, layout_seed, vessel, total)
-    if profile.commit_coverage == "complete-metadata":
+        cargo_languages = aggregate_languages(profile, config) if config.cargo_logos else None
+        return Scene(
+            profile.username,
+            (),
+            energy,
+            layout_seed,
+            vessel,
+            total,
+            cargo_languages=cargo_languages,
+        )
+    if profile.commit_coverage in ("complete-metadata", "complete-primary-language"):
         raise ValueError(
             "cached profile contains aggregate-only data; fetch a fresh profile "
             "without --huge-cargo-ship to render language ships"
