@@ -35,7 +35,7 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **358 passed** in 9.45 seconds, with no live API required. |
+| `pytest -q` | **385 passed** in 10.25 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
@@ -302,3 +302,24 @@ No personal access token, account permission change, `v1` release tag, Marketpla
 listing, or hosted service is required or created by this implementation. Source
 publication and CI are separate from installing the daily workflow in a user's own
 profile repository.
+
+## Approved optional rain effect
+
+Verified on `rain-effect` after the user approved the animation preview.
+The `rain` action/TOML option defaults to false; the CLI offers `--rain` and
+`--no-rain`. Matching original impact-stage pixels are archived under
+`artwork/rain/`. Drop targets exclude land, moving hull envelopes and the
+commit footer. Existing art occludes rain, followed by beam lighting and captions.
+
+The 27 rain checks cover approved pixels, falling-to-impact timing and cleanup,
+seeded open-water targets, unchanged cargo/layout, exact existing art pixels,
+loop closure, quiet scenes, unchanged disabled render paths, configuration overrides,
+real action execution and decoded GIF cleanup. Lint, formatting and wheel/sdist
+build passed alongside the full 385-test suite. Hosted CI exercises rain through
+the root action's local smoke job.
+
+`examples/rain-demo/` contains the huge-ship rain example at 800×320, 100 frames,
+10 fps and 10 seconds: GIF 1,017,611 bytes, PNG 7,305 bytes. A separate local
+fleet export at `out/rain-fleet-implemented/` is 1,049,176 GIF bytes and 7,920 PNG
+bytes. Both decoded exactly against every rendered RGBA frame, with binary
+transparency. Both were visually inspected. The normal dry demos remain intact.

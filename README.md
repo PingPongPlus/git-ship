@@ -46,6 +46,7 @@ That's it. Your fleet updates **daily** using the **past month** of data by defa
 | Automatic data period | Set the repository variable `GIT_SHIP_DATA_WINDOW` to one of those values. [Instructions](docs/advanced.md#choose-your-data-window). |
 | Hourly updates | Change the workflow cron to `'23 * * * *'`. |
 | Hide the light beam | Add `lighthouse-beam: 'false'` under the **Generate fleet** step's `with:` section. |
+| Rain and ocean ripples | Add `rain: 'true'` in the same place. [Preview](examples/rain-demo/git-ship.gif). |
 | Hide the watermark | Add `watermark: 'false'` in the same place. |
 | Show commit total | Add `display-commits: 'true'` to show the fleet's full total at the bottom right. |
 

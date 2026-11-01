@@ -55,6 +55,12 @@ def parser() -> argparse.ArgumentParser:
         help="show the full commit total at the bottom right in fleet mode",
     )
     render.add_argument(
+        "--rain",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="enable or disable pixel rain and ocean impact ripples",
+    )
+    render.add_argument(
         "--cargo-logos",
         action=argparse.BooleanOptionalAction,
         default=None,
@@ -93,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
             "huge_cargo_ship",
             "cargo_logos",
             "display_commits",
+            "rain",
             "observation_date",
         )
         overrides = {k: getattr(args, k) for k in keys}

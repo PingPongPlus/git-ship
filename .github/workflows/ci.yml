@@ -43,6 +43,7 @@ jobs:
           display-commits: 'true'
           huge-cargo-ship: 'true'
           cargo-logos: 'true'
+          rain: 'true'
           output-dir: action-smoke
           token: ''
       - name: Verify action outputs

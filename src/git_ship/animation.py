@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 from .config import HEIGHT, WIDTH, Config
 from .huge_ship import draw_heavy_water, huge_cargo_counts, huge_ship_sprite
 from .layout import Scene, Ship
+from .rain import draw_rain, rain_drops
 from .sprites import (
     FOAM,
     FUNNEL_ORIGINS,
@@ -151,6 +152,7 @@ class Animator:
             if scene.huge_ship
             else None
         )
+        self.rain_drops = rain_drops(scene) if config.rain else ()
 
     def frame(self, t: float) -> Image.Image:
         """t is loop phase in [0, 1); frame(0) == frame(1), no final hold."""
@@ -202,6 +204,8 @@ class Animator:
                         smoke_puff(d, sx, bottom, p)
             # Cargo and the hull occlude smoke drifting behind them.
             image.alpha_composite(sprite, (m.x, m.y))
+        if self.config.rain:
+            image = draw_rain(image, self.rain_drops, t)
         if self.config.lighthouse_beam:
             lighthouse_beam(image, t)
         if self.config.watermark:

@@ -31,6 +31,7 @@ class Config:
     huge_cargo_ship: bool = False
     cargo_logos: bool = False
     display_commits: bool = False
+    rain: bool = False
     include_forks: bool = False
     include_archived: bool = True
     include: tuple[str, ...] = ()
@@ -70,6 +71,7 @@ class Config:
             "huge_cargo_ship",
             "cargo_logos",
             "display_commits",
+            "rain",
         ):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be true or false")

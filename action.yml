@@ -45,6 +45,10 @@ inputs:
     description: Show language symbols on Huge Cargo Ship containers (off by default)
     required: false
     default: ''
+  rain:
+    description: Enable pixel rain and ocean impact ripples (off by default)
+    required: false
+    default: ''
   demo:
     description: Render the bundled fixture entirely offline (for smoke tests)
     required: false
@@ -82,6 +86,7 @@ runs:
         SHIP_HUGE_CARGO_SHIP: ${{ inputs.huge-cargo-ship }}
         SHIP_DISPLAY_COMMITS: ${{ inputs.display-commits }}
         SHIP_CARGO_LOGOS: ${{ inputs.cargo-logos }}
+        SHIP_RAIN: ${{ inputs.rain }}
         SHIP_DEMO: ${{ inputs.demo }}
         SHIP_REPOSITORY_OWNER: ${{ github.repository_owner }}
         GITHUB_TOKEN: ${{ inputs.token }}
