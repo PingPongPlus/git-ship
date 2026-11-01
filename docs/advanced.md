@@ -166,7 +166,8 @@ profile. Changed observation/window/filters also require refetching. Explicit
 complete classified fixtures can support both modes.
 
 Enable `cargo-logos: 'true'`, CLI `--cargo-logos`, or TOML `cargo_logos = true`
-for the approved Java, Python, JavaScript, Rust, C++ and Git pixel symbols.
+for the approved Java, Python, JavaScript, Rust, C++, C, Go, TypeScript, Lua and
+Git pixel symbols. C uses blue, Go cyan, TypeScript blue and Lua navy containers.
 Other languages use short labels on neutral panels. The option only affects
 Huge Cargo Ship mode and defaults to off; disable with `false` or `--no-cargo-logos`.
 

@@ -359,3 +359,17 @@ Checks cover independent counts, mixed code/docs fixtures, unchanged container
 art when the hull counter changes, docs-only rendering, cached-scalar validation,
 old filtered caches and both fleet/huge modes. The huge demo retains rain with a
 fresh image URL, and the personal yearly workflow explicitly enables rain.
+
+## Approved C, Go, TypeScript and Lua containers
+
+The four additional 27×10 container designs were visually approved on 2026-11-01.
+They use C blue, Go cyan, TypeScript blue and Lua navy, with a C hexagon, gopher,
+TS badge, and moon/satellite. Their reference strip is retained separately from
+the original six approved tiles, which remain pixel-identical. Missing O/L/U
+glyphs are supplied explicitly; container artwork uses no system-font text.
+
+Local checks: **425 passed in 11.05s**, Ruff lint and formatting clean, and both
+sdist and wheel built successfully. The additional export regression renders
+all ten styles together with rain and the lighthouse beam, verifies every
+decoded GIF frame, exact commit totals and the loop seam. The approved preview
+also passed a 100-frame, 10-second decoded GIF audit.

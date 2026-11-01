@@ -22,18 +22,21 @@ MINI = {
     "G": [3, 4, 5, 5, 3],
     "I": [7, 2, 2, 2, 7],
     "T": [7, 2, 2, 2, 2],
+    "O": [2, 5, 5, 5, 2],
+    "L": [4, 4, 4, 4, 7],
+    "U": [5, 5, 5, 5, 7],
 }
 STYLES = {
-    "C": ("#537587", "C"),
-    "Go": ("#3e8292", "GO"),
-    "TypeScript": ("#346888", "TS"),
-    "Lua": ("#000080", "LUA"),
     "Java": ("#a34e44", "JAVA"),
     "Python": ("#337ea1", "PY"),
     "JavaScript": ("#dfbe62", "JS"),
     "Rust": ("#ad7658", "RS"),
     "C++": ("#39799c", "C++"),
     "Git": ("#788e98", "GIT"),
+    "C": ("#5c6bc0", "C"),
+    "Go": ("#00add8", "GO"),
+    "TypeScript": ("#3178c6", "TS"),
+    "Lua": ("#000080", "LUA"),
 }
 
 
@@ -97,16 +100,45 @@ def container(language):
         d.rectangle((6, 3, 8, 6), fill=color)
         d.point((8, 3), fill=WHITE)
     elif language == "C":
-        d.ellipse((4, 2, 10, 6), outline=WHITE, width=1)
+        d.polygon(((7, 1), (11, 3), (11, 6), (7, 8), (3, 6), (3, 3)), fill="#c3d2ff")
+        tiny(d, 6, 2, "C", "#283593")
     elif language == "Go":
-        d.text((4, 2), "G", fill=WHITE)
+        # A tiny gopher face: ears, two eyes, nose and paired front teeth.
+        pixels = (
+            ".b.....b.",
+            "bbbbbbbbb",
+            ".bwwbwwb.",
+            ".bwkbwkb.",
+            ".bbbbbbb.",
+            "..bnnnb..",
+            "..bwtwb..",
+            "...bbb...",
+        )
+        palette = {"b": "#9de2ed", "w": "#ffffff", "k": INK, "n": "#d8b997", "t": INK}
+        for row, pixels_row in enumerate(pixels):
+            for col, pixel in enumerate(pixels_row):
+                if pixel != ".":
+                    d.point((3 + col, 1 + row), fill=palette[pixel])
     elif language == "TypeScript":
-        d.text((4, 2), "TS", fill=WHITE)
+        # An inset square badge with a fixed 3x5 TS mark, never a system font.
+        d.rectangle((3, 1, 11, 8), fill="#235a97")
+        tiny(d, 4, 2, "TS", "#ffffff")
     elif language == "Lua":
-        d.text((4, 2), "L", fill=WHITE)
+        # Moon, crater, satellite and a broken orbital arc on Lua navy.
+        d.ellipse((4, 3, 9, 8), fill="#ffffff")
+        d.rectangle((7, 4, 8, 5), fill=color)
+        d.rectangle((10, 1, 11, 2), fill="#ffffff")
+        for point in ((4, 1), (2, 4), (3, 8), (10, 7), (11, 4)):
+            d.point(point, fill="#8c9ddd")
     else:
         d.polygon(((7, 1), (11, 5), (7, 8), (3, 5)), fill="#e59a6b")
         d.line((5, 3, 8, 6), fill=INK)
         d.line((7, 5, 9, 3), fill=INK)
-    tiny(d, 11 if language == "Java" else 13, 3, label, INK if language == "JavaScript" else WHITE)
+    tiny(
+        d,
+        11 if language == "Java" else 13,
+        3,
+        label,
+        INK if language in {"JavaScript", "Go"} else WHITE,
+    )
     return tile

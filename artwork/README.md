@@ -2,6 +2,7 @@ The original editable artwork lives in the installed package:
 
 - `src/git_ship/sprites.py`: lighthouse, rocks, seven ship designs, commit cargo, palette and art primitives.
 - `src/git_ship/huge_ship.py`: separately approved 300×110 heavy cargo ship, six-commit cargo, exact/overflow counters and calm displacement water.
+- `src/git_ship/cargo_art.py`: approved 27×10 language containers with fixed pixel symbols and labels.
 - `src/git_ship/font.py`: original 5×7 bitmap glyphs, including `+`, `#`, spaces and hyphens.
 - `src/git_ship/assets/languages.json`: language colors and abbreviations; rendered ship type is assigned separately.
 - `src/git_ship/animation.py`: separate transient wakes, smoke, lantern states, rotating light ray and period watermark.
@@ -52,6 +53,15 @@ starts at the fixed boom tip while the hook sways by one pixel on narrow hulls
 or two on wider ones, staying connected and repeating exactly over the loop.
 It is drawn before the lighthouse tint. Only the steamship and tug use smoke
 emitters; the smaller posts on the new designs are masts or vents.
+
+Huge-ship containers additionally support approved C, Go, TypeScript and Lua art.
+Their base colors are C blue (`#5c6bc0`), Go cyan (`#00add8`), TypeScript blue
+(`#3178c6`) and Lua navy (`#000080`). All symbols and labels use integer pixels:
+a C hexagon, a tiny Go gopher, a square TS badge, and a Lua moon with a satellite.
+The native approval strip is `huge-ship/additional-language-containers.png`, in
+that order. The original six tiles remain in `huge-ship/language-containers.png`.
+These are project-specific pixel interpretations; the Go gopher is inspired by
+[Renée French's mascot](https://go.dev/blog/gopher), licensed under CC BY 4.0.
 
 The optional lighthouse ray starts at the lantern and changes projected reach,
 tilt and fan width over one exact loop, creating the impression of a rotating
