@@ -62,20 +62,32 @@ def test_invalid_language_weights_are_rejected(counts):
         language_cargo_plan(6, counts)
 
 
-def test_approved_container_pixels_and_ship_geometry():
-    with Image.open(ROOT / "artwork/huge-ship/language-containers.png") as approved:
-        for index, name in enumerate(STYLES):
+@pytest.mark.parametrize(
+    "filename,names",
+    (
+        ("language-containers.png", ("Java", "Python", "JavaScript", "Rust", "C++", "Git")),
+        ("additional-language-containers.png", ("C", "Go", "TypeScript", "Lua")),
+    ),
+)
+def test_approved_container_pixels(filename, names):
+    with Image.open(ROOT / "artwork/huge-ship" / filename) as approved:
+        assert approved.size == (27 * len(names), 10)
+        for index, name in enumerate(names):
             assert (
                 container(name).tobytes()
                 == approved.crop((27 * index, 0, 27 * (index + 1), 10)).tobytes()
             )
+
+
+def test_container_logos_preserve_ship_geometry():
     counts = tuple((name, 6) for name in STYLES)
-    actual = huge_ship_sprite(36, counts)
-    original = huge_ship_sprite(36)
+    total = sum(count for _, count in counts)
+    actual = huge_ship_sprite(total, counts)
+    original = huge_ship_sprite(total)
     mask = Image.new("L", actual.size, 255)
     ImageDraw.Draw(mask).rectangle((72, 26, 239, 75), fill=0)
     diff = ImageChops.difference(actual, original)
-    assert not ImageChops.multiply(diff, mask.convert("RGBA")).getbbox(alpha_only=False)
+    assert all(not ImageChops.multiply(channel, mask).getbbox() for channel in diff.split())
     assert set(actual.getchannel("A").tobytes()) == {0, 255}
     for name in ("Mixed", "TypeScript", "HTML", "C#", "Go", "Unknown Language"):
         assert container(name).size == (27, 10)
@@ -229,6 +241,37 @@ def test_logo_render_exact_export_and_disable_preserve_old_mode(demo, tmp_path):
     assert layout(demo, off).cargo_languages is None
     assert frames[0].tobytes() != Animator(layout(demo, off), off).frame(0).tobytes()
     assert layout(demo, Config(cargo_logos=True, seed="same")) == layout(demo, Config(seed="same"))
+
+
+def test_every_custom_language_exports_together_with_weather(demo, tmp_path):
+    commits = tuple(
+        Commit(f"{index * 6 + number + 1:040x}", demo.username, "2026-09-30T12:00:00Z", (name,))
+        for index, name in enumerate(STYLES)
+        for number in range(6)
+    )
+    repository = Repository(
+        "all-logos", demo.username, False, False, None, dict.fromkeys(STYLES, 100), commits
+    )
+    profile = replace(demo, repositories=(repository,))
+    config = Config(
+        huge_cargo_ship=True,
+        cargo_logos=True,
+        rain=True,
+        include_non_code=True,
+        seed="all-logos",
+        scale=1,
+        fps=5,
+        duration=2,
+    )
+    scene = layout(profile, config)
+    report, frames = export(scene, config, tmp_path)
+    assert report["decoded_frames_match"]
+    assert report["cargo_languages"] == dict.fromkeys(STYLES, 6)
+    assert {box["label"] for box in report["cargo_containers"]["large"]} == set(STYLES)
+    assert report["cargo_commits"] == report["total_commits"] == 6 * len(STYLES)
+    assert len(frames) == 10
+    animator = Animator(scene, config)
+    assert animator.frame(0).tobytes() == animator.frame(1).tobytes()
 
 
 @pytest.mark.parametrize(
