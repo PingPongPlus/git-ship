@@ -61,4 +61,10 @@ Only languages you committed to appear, with up to **6 ships** in fresh random l
 
 Missing image? Check the workflow run under **Actions**. Publishing needs `contents: write` and permission to update the `output` branch. GitHub's image cache can take a little time to refresh.
 
-[Advanced guide & local CLI](docs/advanced.md) · [Custom configuration](examples/config.toml) · [MIT license](LICENSE)
+## Project goals
+
+- [ ] Add more distinct ship designs and animations.
+- [ ] Expand pixel-art logos for more programming and scripting languages.
+- [ ] Add more large ship variants with different silhouettes and cargo layouts.
+
+[Contribute](CONTRIBUTING.md) · [Advanced guide & local CLI](docs/advanced.md) · [Custom configuration](examples/config.toml) · [MIT license](LICENSE)
