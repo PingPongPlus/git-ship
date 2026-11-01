@@ -204,6 +204,7 @@ large/small container counts, `overflow_commits`, and
 | `username` | Explicit input → config username → caller repository owner |
 | `data-window` | `day`, `week`, `month`, or `year`; empty uses TOML `activity_window`, then 30 days |
 | `lighthouse-beam` | `true` or `false`; empty uses TOML `lighthouse_beam`, enabled by default |
+| `rain` | `true` or `false`; empty uses TOML `rain`, disabled by default |
 | `watermark` | `true` or `false`; empty uses TOML `watermark`, enabled by default |
 | `display-commits` | `true` or `false`; empty uses TOML `display_commits`, disabled by default; fleet total at bottom right |
 | `huge-cargo-ship` | `true` or `false`; empty uses TOML `huge_cargo_ship`, disabled by default |
@@ -297,6 +298,7 @@ Normalized schema-3 profiles record commit coverage and repository filters along
 | `duration` | 10 | Integer seconds, 2–20; at most 300 frames |
 | `seed` | fresh random value | Optional string/integer to reproduce positions and ship types; omit for a fresh fleet on each run |
 | `lighthouse_beam` | true | Rotating lighthouse ray; set false to disable |
+| `rain` | false | Slanted pixel rain and miniature ocean impact ripples in either ship mode |
 | `watermark` | true | Top-left Git Ship and data-period label; set false to disable |
 | `display_commits` | false | Full commit total at the bottom right of the standard fleet |
 | `huge_cargo_ship` | false | One aggregate ship with six-commit large containers; replaces the standard fleet |
@@ -312,6 +314,19 @@ Normalized schema-3 profiles record commit coverage and repository filters along
 To disable the ray, add `lighthouse-beam: 'false'` under the action's `with:` block, set `lighthouse_beam = false` in TOML, or pass `--no-lighthouse-beam` to the CLI. Use `--lighthouse-beam` to enable it explicitly. The setting does not change cargo counts or ship placement.
 
 The watermark reads **`GIT SHIP — COMMITS FROM THE PAST MONTH`** for the month preset. It follows the selected day, week, month or year window; a custom window uses its number of days. It uses the project's uppercase pixel font and gray lettering at the top left. To hide it, set the action input `watermark: 'false'`, use `watermark = false` in TOML, or pass `--no-watermark`. `--watermark` enables it explicitly. This display setting does not change commit counts.
+
+Enable rain with the action input `rain: 'true'`, TOML `rain = true`, or CLI
+`--rain`. Set `false` or use `--no-rain` to disable it. Rain works with the fleet,
+Huge Cargo Ship, and quiet scenes; it defaults to off. [Animated example](../examples/rain-demo/git-ship.gif).
+
+The approved effect uses up to 44 seeded drops, with five fall-and-impact cycles
+per animation loop. Each slanted drop ends in a tiny splash and a short expanding
+ripple. Impact footprints avoid land, moving hull envelopes and the optional
+commit footer. Ships and existing art occlude the weather; the lighthouse beam
+then lights it, with captions drawn last. All pixels keep binary transparency.
+Rain has its own random stream and changes no cargo, data window or placement.
+The export report records `rain`. The approval snapshots and native-grid source
+are documented in [the rain artwork notes](../artwork/rain/README.md).
 
 Enable `display-commits: 'true'`, `display_commits = true` in TOML, or
 `--display-commits` to show the standard fleet's full commit total at the bottom

@@ -1,0 +1,118 @@
+{
+  "width": 800,
+  "height": 320,
+  "frames": 100,
+  "fps": 10,
+  "duration_seconds": 10.0,
+  "gif_bytes": 1017611,
+  "min_transparent_fraction": 0.6296875,
+  "max_transparent_fraction": 0.763671875,
+  "decoded_frames_match": true,
+  "activity_window_days": 30,
+  "mode": "huge-cargo-ship",
+  "huge_cargo_ship": true,
+  "cargo_logos": true,
+  "commits_per_large_container": 6,
+  "layout_seed": "rain-preview",
+  "lighthouse_beam": true,
+  "rain": true,
+  "watermark": true,
+  "watermark_text": "Git Ship \u2014 commits from the past month",
+  "display_commits": false,
+  "commit_counter_text": null,
+  "png_bytes": 7305,
+  "languages": [],
+  "total_commits": 44,
+  "large_containers": 7,
+  "small_containers": 2,
+  "displayed_large_containers": 7,
+  "displayed_small_containers": 2,
+  "overflow_commits": 0,
+  "cargo_languages": {
+    "C++": 20,
+    "Java": 7,
+    "Python": 6,
+    "JavaScript": 5,
+    "Rust": 4,
+    "TypeScript": 2
+  },
+  "cargo_containers": {
+    "large": [
+      {
+        "label": "C++",
+        "commits": 6,
+        "languages": {
+          "C++": 6
+        }
+      },
+      {
+        "label": "C++",
+        "commits": 6,
+        "languages": {
+          "C++": 6
+        }
+      },
+      {
+        "label": "C++",
+        "commits": 6,
+        "languages": {
+          "C++": 6
+        }
+      },
+      {
+        "label": "Java",
+        "commits": 6,
+        "languages": {
+          "Java": 6
+        }
+      },
+      {
+        "label": "Python",
+        "commits": 6,
+        "languages": {
+          "Python": 6
+        }
+      },
+      {
+        "label": "Mixed",
+        "commits": 6,
+        "languages": {
+          "C++": 2,
+          "Java": 1,
+          "JavaScript": 3
+        }
+      },
+      {
+        "label": "Mixed",
+        "commits": 6,
+        "languages": {
+          "JavaScript": 2,
+          "Rust": 4
+        }
+      }
+    ],
+    "small": [
+      {
+        "label": "TypeScript",
+        "commits": 1,
+        "languages": {
+          "TypeScript": 1
+        }
+      },
+      {
+        "label": "TypeScript",
+        "commits": 1,
+        "languages": {
+          "TypeScript": 1
+        }
+      }
+    ],
+    "overflow_commits": 0
+  },
+  "huge_ship": {
+    "x": 82,
+    "y": 36,
+    "width": 300,
+    "height": 110
+  }
+}

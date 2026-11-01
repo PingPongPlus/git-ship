@@ -41,6 +41,7 @@ jobs:
           # Scheduled default: repository variable GIT_SHIP_DATA_WINDOW, or month.
           data-window: ${{ inputs.period || vars.GIT_SHIP_DATA_WINDOW || 'month' }}
           # lighthouse-beam: 'false' # Optional: disable the rotating ray.
+          # rain: 'true' # Optional: falling rain and miniature ocean impact ripples.
           # watermark: 'false' # Optional: hide the Git Ship and data-period label.
           # display-commits: 'true' # Optional: show the full total at the bottom right.
           # huge-cargo-ship: 'true' # Optional: one heavy ship for all commits (six per large cargo).
