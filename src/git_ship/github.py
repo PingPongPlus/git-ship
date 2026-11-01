@@ -20,6 +20,7 @@ from .model import (
     Commit,
     Profile,
     Repository,
+    aggregate_commits,
     commit_filter_signature,
     commit_window,
     parse_timestamp,
@@ -371,6 +372,18 @@ class GitHubClient:
         )
         profile = Profile(username, observed.date(), tuple(repos), observed_at=observed.isoformat())
         repos = self.load_cargo(profile, config, observed)
+        commit_total = None
+        if config.display_commits and not config.huge_cargo_ship:
+            # Cargo is capped and a mixed-language commit can appear on several
+            # ships. Count complete metadata separately, including docs-only repos.
+            complete = replace(
+                profile,
+                repositories=self.load_aggregate_commits(profile, config, observed),
+                cargo_window=config.activity_window,
+                commit_coverage="complete-metadata",
+                commit_filters=commit_filter_signature(config),
+            )
+            commit_total = aggregate_commits(complete, config)
         total = self.contributions(username, observed, config.activity_window)
         # Validate the same contract as offline fixtures before rendering.
         return Profile.from_dict(
@@ -384,6 +397,7 @@ class GitHubClient:
                     "complete-metadata" if config.huge_cargo_ship else "sampled-language"
                 ),
                 "commit_filters": commit_filter_signature(config),
+                "commit_total": commit_total,
                 "repositories": [asdict(r) for r in repos],
                 "contributions": total,
                 "warnings": self.warnings,

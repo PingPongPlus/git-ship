@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from .config import HEIGHT, WIDTH, Config
 from .model import Language, Profile, aggregate_commits, global_activity, rank_languages
 from .sprites import SHIP_DESIGNS, Style, language_style, stable_seed
-from .watermark import WATERMARK_HEIGHT
+from .watermark import COMMIT_FOOTER_HEIGHT, WATERMARK_HEIGHT
 
 
 @dataclass(frozen=True)
@@ -41,9 +41,12 @@ class Scene:
     layout_seed: str = ""
     huge_ship: HugeShip | None = None
     total_commits: int | None = None
+    fleet_commits: int | None = None
 
 
-def placements(widths: list[int], rng: random.Random, top_margin: int = 0) -> list[tuple[int, int]]:
+def placements(
+    widths: list[int], rng: random.Random, top_margin: int = 0, bottom_margin: int = 0
+) -> list[tuple[int, int]]:
     """Sample the entire sea, retrying bounded packs before a guaranteed fit."""
     if not widths:
         return []
@@ -60,7 +63,7 @@ def placements(widths: list[int], rng: random.Random, top_margin: int = 0) -> li
             width = widths[index]
             for _ in range(160):
                 x = rng.randint(82, WIDTH - width - 9)
-                y = rng.randint(2 + top_margin, HEIGHT - 64)
+                y = rng.randint(2 + top_margin, HEIGHT - 64 - bottom_margin)
                 box = (x - 8, y - 2, x + width + 8, y + 63)
                 if all(separated(box, other) for other in boxes):
                     positions[index] = (x, y)
@@ -80,7 +83,10 @@ def placements(widths: list[int], rng: random.Random, top_margin: int = 0) -> li
     rng.shuffle(columns)
     cells = [(column, row) for column in range(3) for row in range(2)]
     rng.shuffle(cells)
-    splits = [rng.randint(68 + top_margin, 90) for _ in range(3)]
+    splits = [
+        rng.randint((66 if bottom_margin else 68) + top_margin, min(90, 92 - bottom_margin))
+        for _ in range(3)
+    ]
     result = []
     for width, (column, row) in zip(widths, cells, strict=False):
         left = 74 + sum(columns[:column])
@@ -88,7 +94,7 @@ def placements(widths: list[int], rng: random.Random, top_margin: int = 0) -> li
         y = (
             rng.randint(2 + top_margin, splits[column] - 64)
             if row == 0
-            else rng.randint(splits[column] + 4, 96)
+            else rng.randint(splits[column] + 4, 96 - bottom_margin)
         )
         result.append((x, y))
     return result
@@ -123,7 +129,13 @@ def layout(profile: Profile, config: Config) -> Scene:
         language for language in rank_languages(profile, config) if (language.cargo or 0) > 0
     )[: config.ships]
     widths = [min(round(44 + 16 * math.sqrt(language.share)), 62) for language in languages]
-    positions = placements(widths, rng, WATERMARK_HEIGHT if config.watermark else 0)
+    fleet_commits = aggregate_commits(profile, config) if config.display_commits else None
+    positions = placements(
+        widths,
+        rng,
+        WATERMARK_HEIGHT if config.watermark else 0,
+        COMMIT_FOOTER_HEIGHT if config.display_commits else 0,
+    )
     # Each shuffled bag uses every approved design before repeating. Ship shapes
     # are chosen per generation, independently of the language they carry.
     design_rng = random.Random(stable_seed(f"{layout_seed}:ships"))
@@ -149,4 +161,4 @@ def layout(profile: Profile, config: Config) -> Scene:
                 1.2 + energy * 0.8,
             )
         )
-    return Scene(profile.username, tuple(ships), energy, layout_seed)
+    return Scene(profile.username, tuple(ships), energy, layout_seed, fleet_commits=fleet_commits)

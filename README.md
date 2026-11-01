@@ -46,6 +46,7 @@ That's it. Your fleet updates **daily** using the **past month** of data by defa
 | Hourly updates | Change the workflow cron to `'23 * * * *'`. |
 | Hide the light beam | Add `lighthouse-beam: 'false'` under the **Generate fleet** step's `with:` section. |
 | Hide the watermark | Add `watermark: 'false'` in the same place. |
+| Show commit total | Add `display-commits: 'true'` to show the fleet's full total at the bottom right. |
 
 ## Reading the standard fleet
 

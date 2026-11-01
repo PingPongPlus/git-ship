@@ -21,7 +21,7 @@ from .sprites import (
     lighthouse_sprite,
     ship_sprite,
 )
-from .watermark import draw_watermark
+from .watermark import draw_commit_total, draw_watermark
 
 TAU = math.tau
 LIGHT_ORIGIN = (38, 47)
@@ -135,6 +135,10 @@ class Animator:
                 raise ValueError("aggregate scene has inconsistent ship or commit data")
         elif scene.huge_ship is not None:
             raise ValueError("huge ship data requires huge-cargo-ship mode")
+        if (config.display_commits and not config.huge_cargo_ship) != (
+            scene.fleet_commits is not None
+        ):
+            raise ValueError("scene and commit display differ; rebuild the scene with layout()")
         self.scene, self.config = scene, config
         self.sprites = tuple(
             ship_sprite(s.style, s.width, s.language.cargo or 0) for s in scene.ships
@@ -198,6 +202,8 @@ class Animator:
             lighthouse_beam(image, t)
         if self.config.watermark:
             draw_watermark(image, self.config.activity_window)
+        if self.scene.fleet_commits is not None:
+            draw_commit_total(image, self.scene.fleet_commits)
         if self.config.scale != 1:
             image = image.resize(
                 (WIDTH * self.config.scale, HEIGHT * self.config.scale), Image.Resampling.NEAREST

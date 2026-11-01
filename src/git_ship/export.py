@@ -17,7 +17,7 @@ from .config import Config
 from .huge_ship import COMMITS_PER_LARGE, HUGE_HEIGHT, HUGE_WIDTH, huge_cargo_counts
 from .layout import Scene
 from .sprites import CARGO_GROUP_SIZE, cargo_groups
-from .watermark import watermark_label
+from .watermark import commit_label, watermark_label
 
 
 def indexed_frames(frames: list[Image.Image]) -> list[Image.Image]:
@@ -120,6 +120,12 @@ def export(
         report["watermark_text"] = (
             watermark_label(config.activity_window) if config.watermark else None
         )
+        report["display_commits"] = scene.fleet_commits is not None
+        report["commit_counter_text"] = (
+            commit_label(scene.fleet_commits) if scene.fleet_commits is not None else None
+        )
+        if scene.fleet_commits is not None:
+            report["total_commits"] = scene.fleet_commits
         frames[0].save(root / "git-ship.png")
         report["png_bytes"] = (root / "git-ship.png").stat().st_size
         report["languages"] = [

@@ -29,6 +29,7 @@ class Config:
     lighthouse_beam: bool = True
     watermark: bool = True
     huge_cargo_ship: bool = False
+    display_commits: bool = False
     include_forks: bool = False
     include_archived: bool = True
     include: tuple[str, ...] = ()
@@ -66,6 +67,7 @@ class Config:
             "lighthouse_beam",
             "watermark",
             "huge_cargo_ship",
+            "display_commits",
         ):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be true or false")

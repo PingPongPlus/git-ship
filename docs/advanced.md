@@ -155,8 +155,9 @@ shows 44 fixture commits as seven large containers and two small containers.
 
 Huge mode fetches complete commit metadata without language or file-detail calls.
 Schema-3 caches record coverage, observation time, window and repository filters.
-Sampled fleet caches and schema-1/2 caches cannot establish an exact aggregate
-total: fetch a fresh profile with `--huge-cargo-ship`. Keep that flag when
+Sampled fleet caches without a separately scanned `commit_total`, and schema-1/2
+caches, cannot establish an exact aggregate total: fetch a fresh profile with
+`--huge-cargo-ship` or `--display-commits`. Keep the huge-mode flag when
 rendering its metadata-only cache; a language fleet needs a fresh classified
 profile. Changed observation/window/filters also require refetching. Explicit
 complete classified fixtures can support both modes.
@@ -173,6 +174,7 @@ large/small container counts, `overflow_commits`, and
 | `data-window` | `day`, `week`, `month`, or `year`; empty uses TOML `activity_window`, then 30 days |
 | `lighthouse-beam` | `true` or `false`; empty uses TOML `lighthouse_beam`, enabled by default |
 | `watermark` | `true` or `false`; empty uses TOML `watermark`, enabled by default |
+| `display-commits` | `true` or `false`; empty uses TOML `display_commits`, disabled by default; fleet total at bottom right |
 | `huge-cargo-ship` | `true` or `false`; empty uses TOML `huge_cargo_ship`, disabled by default |
 | `output-dir` | `git-ship-output`, a subdirectory inside the caller workspace |
 | `config` | Optional TOML path inside the caller workspace |
@@ -264,6 +266,7 @@ Normalized schema-3 profiles record commit coverage and repository filters along
 | `seed` | fresh random value | Optional string/integer to reproduce positions and ship types; omit for a fresh fleet on each run |
 | `lighthouse_beam` | true | Rotating lighthouse ray; set false to disable |
 | `watermark` | true | Top-left Git Ship and data-period label; set false to disable |
+| `display_commits` | false | Full commit total at the bottom right of the standard fleet |
 | `huge_cargo_ship` | false | One aggregate ship with six-commit large containers; replaces the standard fleet |
 | `observation_date` | current instant live | ISO/TOML date; override uses end of that UTC date; offline uses its fixture instant/date |
 | `include_forks` | false | Include owned public forks when explicitly enabled |
@@ -276,6 +279,16 @@ Normalized schema-3 profiles record commit coverage and repository filters along
 To disable the ray, add `lighthouse-beam: 'false'` under the action's `with:` block, set `lighthouse_beam = false` in TOML, or pass `--no-lighthouse-beam` to the CLI. Use `--lighthouse-beam` to enable it explicitly. The setting does not change cargo counts or ship placement.
 
 The watermark reads **`GIT SHIP — COMMITS FROM THE PAST MONTH`** for the month preset. It follows the selected day, week, month or year window; a custom window uses its number of days. It uses the project's uppercase pixel font and gray lettering at the top left. To hide it, set the action input `watermark: 'false'`, use `watermark = false` in TOML, or pass `--no-watermark`. `--watermark` enables it explicitly. This display setting does not change commit counts.
+
+Enable `display-commits: 'true'`, `display_commits = true` in TOML, or
+`--display-commits` to show the standard fleet's full commit total at the bottom
+right. Disable it with `false` or `--no-display-commits`. This is independent of
+the watermark and reserves space below the ships. It counts distinct authored
+commits across all selected public repositories in the selected period, including
+docs-only commits, without the 20-container limit or mixed-language duplicates.
+Enabling it adds a complete metadata scan; schema-3 caches save its total with
+the observation instant, window and repository filters. Older sampled caches
+must be fetched again. Huge Cargo Ship keeps its existing total on the hull.
 
 Abbreviations include JS, TS, IPYNB, and OBJ-C. Unknown names use an uppercase ASCII approximation truncated to six characters; configure labels to avoid collisions. Full language names remain in the report. Unknown languages receive deterministic color variants and participate in the same shuffled ship-type pool. An inactive window keeps the lighthouse, its optional ray and localized ripples, with no idle ships. Total export workload is capped at **80 million frame-pixels** before allocation; not every otherwise-valid scale/fps/duration combination fits. RGBA, indexed and verification frames make peak memory several times the pixel count.
 

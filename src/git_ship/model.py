@@ -72,6 +72,7 @@ class Profile:
     cargo_window: int | None = None
     commit_coverage: str = "sampled-language"
     commit_filters: dict[str, Any] | None = None
+    commit_total: int | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Profile:
@@ -151,8 +152,11 @@ class Profile:
                 "include": list(filters["include"]),
                 "exclude": list(filters["exclude"]),
             }
+        commit_total = data.get("commit_total") if schema == 3 else None
+        if commit_total is not None and (type(commit_total) is not int or commit_total < 0):
+            raise ValueError("commit_total must be null or a nonnegative integer")
         full_fixture = coverage == "complete-language" and cargo_window is None and filters is None
-        if coverage != "sampled-language" and not full_fixture:
+        if commit_total is not None or (coverage != "sampled-language" and not full_fixture):
             if cargo_window is None or instant is None or filters is None:
                 raise ValueError(
                     "complete live commit data requires its window, instant and filters"
@@ -167,6 +171,7 @@ class Profile:
             cargo_window,
             coverage,
             filters,
+            commit_total,
         )
 
     @classmethod
@@ -232,7 +237,10 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
     """Count all distinct qualifying authored SHAs, without language or visual caps."""
     if config.username and config.username.casefold() != profile.username.casefold():
         raise ValueError("aggregate profile username differs; fetch a fresh profile")
-    if profile.commit_coverage not in ("complete-metadata", "complete-language"):
+    if profile.commit_total is None and profile.commit_coverage not in (
+        "complete-metadata",
+        "complete-language",
+    ):
         raise ValueError(
             "aggregate commits require complete history; fetch a fresh aggregate profile"
         )
@@ -241,6 +249,7 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
         profile.commit_coverage == "complete-language"
         and profile.cargo_window is None
         and profile.commit_filters is None
+        and profile.commit_total is None
     )
     if not full_fixture:
         if (
@@ -253,6 +262,8 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
                 "aggregate cache window, observation or filters differ; "
                 "fetch a fresh aggregate profile"
             )
+    if profile.commit_total is not None:
+        return profile.commit_total
     start, end = commit_window(observed, config.activity_window)
     shas = set()
     for repo in profile.repositories:

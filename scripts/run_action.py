@@ -39,6 +39,11 @@ def run() -> int:
             if huge not in ("true", "false"):
                 raise ValueError("huge-cargo-ship must be true or false")
             args.append("--huge-cargo-ship" if huge == "true" else "--no-huge-cargo-ship")
+        commits = os.environ.get("SHIP_DISPLAY_COMMITS", "").strip().lower()
+        if commits:
+            if commits not in ("true", "false"):
+                raise ValueError("display-commits must be true or false")
+            args.append("--display-commits" if commits == "true" else "--no-display-commits")
         data_window = os.environ.get("SHIP_DATA_WINDOW", "").strip().lower()
         if data_window:
             if data_window not in DATA_WINDOWS:

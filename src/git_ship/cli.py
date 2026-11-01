@@ -49,6 +49,12 @@ def parser() -> argparse.ArgumentParser:
         help="enable or disable the project and activity-period watermark",
     )
     render.add_argument(
+        "--display-commits",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="show the full commit total at the bottom right in fleet mode",
+    )
+    render.add_argument(
         "--huge-cargo-ship",
         action=argparse.BooleanOptionalAction,
         default=None,
@@ -79,6 +85,7 @@ def main(argv: list[str] | None = None) -> int:
             "lighthouse_beam",
             "watermark",
             "huge_cargo_ship",
+            "display_commits",
             "observation_date",
         )
         overrides = {k: getattr(args, k) for k in keys}
