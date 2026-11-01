@@ -73,6 +73,12 @@ def parser() -> argparse.ArgumentParser:
         help="show language symbols on Huge Cargo Ship containers",
     )
     render.add_argument(
+        "--endless-cargo",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="stack all huge-ship cargo upward, growing the image height (off by default)",
+    )
+    render.add_argument(
         "--huge-cargo-ship",
         action=argparse.BooleanOptionalAction,
         default=None,
@@ -103,6 +109,7 @@ def main(argv: list[str] | None = None) -> int:
             "lighthouse_beam",
             "watermark",
             "huge_cargo_ship",
+            "endless_cargo",
             "cargo_logos",
             "display_commits",
             "rain",

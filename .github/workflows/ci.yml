@@ -42,6 +42,7 @@ jobs:
           data-window: week
           display-commits: 'true'
           huge-cargo-ship: 'true'
+          endless-cargo: 'true'
           cargo-logos: 'true'
           rain: 'true'
           output-dir: action-smoke

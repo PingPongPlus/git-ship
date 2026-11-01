@@ -199,8 +199,31 @@ when it changes; older unscoped caches represent the previous all-commit view.
 
 Full six-commit groups get single-language containers. Leftovers fill mixed
 containers marked `MIX`; the last zero to five commits retain small boxes.
-The thirty-large-container capacity, exact hull total and overflow remain intact.
+By default the thirty-large-container capacity, exact hull total and overflow remain intact.
 Reports record language totals and the contents of every visible container.
+
+Enable **endless cargo** to show every six-commit container instead of an overflow
+count. Six columns keep stacking upward, and the canvas grows by ten native
+pixels for each tier beyond the original five. The ocean, hull, lighthouse and
+wake stay aligned below the taller stacks; the watermark stays at the top.
+Both plain and language-marked containers work with rain and the light beam.
+This option defaults to off and only affects Huge Cargo Ship mode.
+
+```yaml
+huge-cargo-ship: 'true'
+endless-cargo: 'true'
+```
+
+For the CLI use `--huge-cargo-ship --endless-cargo`, or set
+`huge_cargo_ship = true` and `endless_cargo = true` in TOML. Disable with
+`endless-cargo: 'false'`, `--no-endless-cargo`, or `endless_cargo = false`.
+All qualifying cargo is visible and `overflow_commits` is zero. Real authored
+commit totals and six-to-one grouping retain their existing meaning.
+The existing 80-million-frame-pixel budget is checked against the expanded
+canvas before allocating frames or container plans. If a large stack exceeds
+it, reduce `scale`, `fps` or `duration` in TOML, or select a shorter data window.
+For example, `scale = 1`, `fps = 5`, `duration = 2` supports taller exports.
+Oversized exports fail clearly and preserve previous assets.
 
 Logo-enabled live caches use `complete-file-language` coverage. Plain metadata,
 sampled fleet caches, and older `complete-primary-language` caches need
@@ -228,6 +251,7 @@ large/small container counts, `overflow_commits`, and
 | `watermark` | `true` or `false`; empty uses TOML `watermark`, enabled by default |
 | `display-commits` | `true` or `false`; empty uses TOML `display_commits`, disabled by default; fleet total at bottom right |
 | `huge-cargo-ship` | `true` or `false`; empty uses TOML `huge_cargo_ship`, disabled by default |
+| `endless-cargo` | `true` or `false`; stack all huge cargo upward and grow the image height, disabled by default |
 | `cargo-logos` | `true` or `false`; language symbols on huge containers, disabled by default |
 | `output-dir` | `git-ship-output`, a subdirectory inside the caller workspace |
 | `config` | Optional TOML path inside the caller workspace |
@@ -313,7 +337,7 @@ Normalized schema-3 profiles record commit coverage and repository filters along
 | `username` | empty | Required live; a GitHub user login |
 | `ships` | 6 | 0–6, limited to languages with confirmed qualifying commits |
 | `activity_window` | 30 | Rolling days, 1–365; friendly presets are 1/7/30/365 |
-| `scale` | 2 | Integer 1–4; 400×160 logical grid, nearest-neighbor export |
+| `scale` | 2 | Integer 1–4; 400×160 base grid; endless cargo can increase height; nearest-neighbor export |
 | `fps` | 10 | 5, 10, 20 or 25, all exact GIF centiseconds |
 | `duration` | 10 | Integer seconds, 2–20; at most 300 frames |
 | `seed` | fresh random value | Optional string/integer to reproduce positions and ship types; omit for a fresh fleet on each run |
@@ -323,6 +347,7 @@ Normalized schema-3 profiles record commit coverage and repository filters along
 | `watermark` | true | Top-left Git Ship and data-period label; set false to disable |
 | `display_commits` | false | Full commit total at the bottom right of the standard fleet |
 | `huge_cargo_ship` | false | One aggregate ship with six-commit large containers; replaces the standard fleet |
+| `endless_cargo` | false | Show every huge container in taller stacks; automatically expand canvas height |
 | `cargo_logos` | false | Language symbols on the huge ship; adds changed-file requests per commit |
 | `observation_date` | current instant live | ISO/TOML date; override uses end of that UTC date; offline uses its fixture instant/date |
 | `include_forks` | false | Include owned public forks when explicitly enabled |
