@@ -24,6 +24,10 @@ MINI = {
     "T": [7, 2, 2, 2, 2],
 }
 STYLES = {
+    "C": ("#537587", "C"),
+    "Go": ("#3e8292", "GO"),
+    "TypeScript": ("#346888", "TS"),
+    "Lua": ("#000080", "LUA"),
     "Java": ("#a34e44", "JAVA"),
     "Python": ("#337ea1", "PY"),
     "JavaScript": ("#dfbe62", "JS"),
@@ -92,6 +96,14 @@ def container(language):
         d.polygon(((7, 1), (11, 3), (11, 6), (7, 8), (3, 6), (3, 3)), fill=WHITE)
         d.rectangle((6, 3, 8, 6), fill=color)
         d.point((8, 3), fill=WHITE)
+    elif language == "C":
+        d.ellipse((4, 2, 10, 6), outline=WHITE, width=1)
+    elif language == "Go":
+        d.text((4, 2), "G", fill=WHITE)
+    elif language == "TypeScript":
+        d.text((4, 2), "TS", fill=WHITE)
+    elif language == "Lua":
+        d.text((4, 2), "L", fill=WHITE)
     else:
         d.polygon(((7, 1), (11, 5), (7, 8), (3, 5)), fill="#e59a6b")
         d.line((5, 3, 8, 6), fill=INK)
