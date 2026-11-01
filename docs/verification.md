@@ -18,6 +18,14 @@ commits (9 Java, 13 Python, 44 documentation/unclassified). The resulting
 100-frame GIF passed exact decoded-frame verification. It was a local audit;
 the personal profile's fleet selection was not changed.
 
+The follow-up file-detection audit corrected the broad Git fallback. It inspected
+changed files even in repositories with no language bytes, resolving README
+Markdown and workflow YAML explicitly. On the same account's then-current
+past-month data, 111 requests identified 69 unique commits: Markdown 33, YAML 12,
+Python 11, Java 9, SVG 2, Gradle 1 and JSON 1, with no Git fallbacks or warnings.
+The 100-frame GIF again passed exact decoding. Old primary-language caches
+require refetching. Matching containers now fill adjacent supported stacks.
+
 ## Commands and results
 
 Commands were run from the project root with its `.venv` unless noted.
@@ -27,7 +35,7 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **342 passed** in 9.64 seconds, with no live API required. |
+| `pytest -q` | **358 passed** in 9.45 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
@@ -268,8 +276,8 @@ Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 
 Huge demo: `examples/huge-demo/`, using seed `huge-demo`, the same month fixture,
 and the new watermark wording. It exports **800×320**, **100 frames at 10 fps**,
-**10 seconds**, **929,157 GIF bytes** and **6,298 PNG bytes**. Transparency ranges
-from **63.321875% to 76.6515625%** across the loop. Its larger ship has its own
+**10 seconds**, **943,039 GIF bytes** and **6,400 PNG bytes**. Transparency ranges
+from **63.2984375% to 76.628125%** across the loop. Its larger ship has its own
 transparency checks; the standard fleet's 80% ray-off check remains unchanged.
 The 44-commit total is represented by seven six-commit containers and two small
 ones, with no overflow. Both modes' regenerated contact sheets were inspected.

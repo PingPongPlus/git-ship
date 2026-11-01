@@ -168,23 +168,30 @@ Other languages use short labels on neutral panels. The option only affects
 Huge Cargo Ship mode and defaults to off; disable with `false` or `--no-cargo-logos`.
 
 Every distinct authored SHA is assigned once. Live scans classify all commits
-from changed filenames using the vendored Linguist heuristic and current
-repository language data. The language with the greatest sum of changed lines
+from changed filenames using the vendored Linguist heuristic. Repository
+language data resolves ambiguous extensions; recognizable file types are also
+detected when omitted from GitHub's language-byte totals, including Markdown
+READMEs, YAML workflows, deleted source languages and build scripts.
+The language with the greatest sum of changed lines
 wins; ties use alphabetical order. Zero-line changes have weight one, and renames
-consider both filenames. Documentation-only or unclassified commits use Git.
-Deleted languages absent from current repository language data may be unclassified.
+consider both filenames. Markdown appears as `MD`, workflow/config YAML as
+`YAML`, and genuinely unknown files use `Git`. Ambiguous extensions without a
+repository-language match remain unknown rather than guessing.
 
 Full six-commit groups get single-language containers. Leftovers fill mixed
 containers marked `MIX`; the last zero to five commits retain small boxes.
 The thirty-large-container capacity, exact hull total and overflow remain intact.
 Reports record language totals and the contents of every visible container.
 
-Logo-enabled live caches use `complete-primary-language` coverage. Plain metadata
-or sampled fleet caches need refetching with logos enabled. Primary-language
+Logo-enabled live caches use `complete-file-language` coverage. Plain metadata,
+sampled fleet caches, and older `complete-primary-language` caches need
+refetching with logos enabled to identify previously unclassified files. These
 caches support both huge variants but require refetching for the standard fleet,
 which counts multi-language commits on each affected ship. Complete classified
 fixtures assign a commit to its alphabetically first language. A classified
 duplicate SHA takes precedence over an unclassified copy.
+Logo containers fill adjacent supported stacks from left to right, keeping
+same-language groups together rather than following the plain ship's center-out layout.
 
 The huge report uses `mode: "huge-cargo-ship"`, `total_commits`, total and displayed
 large/small container counts, `overflow_commits`, and

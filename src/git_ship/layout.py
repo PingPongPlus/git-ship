@@ -135,7 +135,11 @@ def layout(profile: Profile, config: Config) -> Scene:
             total,
             cargo_languages=cargo_languages,
         )
-    if profile.commit_coverage in ("complete-metadata", "complete-primary-language"):
+    if profile.commit_coverage in (
+        "complete-metadata",
+        "complete-primary-language",
+        "complete-file-language",
+    ):
         raise ValueError(
             "cached profile contains aggregate-only data; fetch a fresh profile "
             "without --huge-cargo-ship to render language ships"

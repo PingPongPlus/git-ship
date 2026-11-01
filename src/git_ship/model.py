@@ -18,6 +18,7 @@ COMMIT_COVERAGE = {
     "complete-metadata",
     "complete-language",
     "complete-primary-language",
+    "complete-file-language",
 }
 
 
@@ -246,6 +247,7 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
         "complete-metadata",
         "complete-language",
         "complete-primary-language",
+        "complete-file-language",
     ):
         raise ValueError(
             "aggregate commits require complete history; fetch a fresh aggregate profile"
@@ -291,7 +293,7 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
 def aggregate_languages(profile: Profile, config: Config) -> tuple[tuple[str, int], ...]:
     """Assign every distinct commit once; classified fixtures break ties by name."""
     total = aggregate_commits(profile, config)  # Validate cached window and selection first.
-    if profile.commit_coverage not in ("complete-language", "complete-primary-language"):
+    if profile.commit_coverage not in ("complete-language", "complete-file-language"):
         raise ValueError(
             "cargo logos need complete language data; fetch a fresh profile with logos"
         )

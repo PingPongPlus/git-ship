@@ -176,7 +176,9 @@ class GitHubClient:
                 # language once, whether the change adds, deletes or renames it.
                 affected = set()
                 for name in (entry["filename"], entry.get("previous_filename")):
-                    if isinstance(name, str) and (language := file_language(name, available)):
+                    if isinstance(name, str) and (
+                        language := file_language(name, available, allow_unreported=primary_only)
+                    ):
                         languages.add(language)
                         affected.add(language)
                 changes = entry.get("changes", 1)
@@ -234,7 +236,7 @@ class GitHubClient:
                 for item in page:
                     commit = self.authored_commit(item, profile.username, start, end)
                     if commit is not None and commit.sha not in seen:
-                        if config.huge_cargo_ship and config.cargo_logos and repo.languages:
+                        if config.huge_cargo_ship and config.cargo_logos:
                             commit = replace(
                                 commit,
                                 languages=self.changed_languages(
@@ -414,7 +416,7 @@ class GitHubClient:
                 "observed_at": observed.isoformat(),
                 "cargo_window": config.activity_window,
                 "commit_coverage": (
-                    ("complete-primary-language" if config.cargo_logos else "complete-metadata")
+                    ("complete-file-language" if config.cargo_logos else "complete-metadata")
                     if config.huge_cargo_ship
                     else "sampled-language"
                 ),

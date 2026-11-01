@@ -187,6 +187,8 @@ def test_live_logo_scan_is_complete_uncapped_and_cache_marks_primary_coverage(
                 "link": '<https://api.github.com/repos/sailor/code/commits?page=2>; rel="next"'
             }
         sha = urlparse(path).path.split("/")[-1]
+        if "/docs/" in path:
+            return {"sha": sha, "files": [{"filename": "README.md", "changes": 5}]}, {}
         return {
             "sha": sha,
             "files": [
@@ -197,10 +199,10 @@ def test_live_logo_scan_is_complete_uncapped_and_cache_marks_primary_coverage(
 
     monkeypatch.setattr(client, "request", request)
     profile = client.fetch(config)
-    assert profile.commit_coverage == "complete-primary-language"
-    assert dict(aggregate_languages(profile, config)) == {"Java": 30, "Git": 1}
+    assert profile.commit_coverage == "complete-file-language"
+    assert dict(aggregate_languages(profile, config)) == {"Java": 30, "Markdown": 1}
     assert len(profile.repositories[0].commits) == 30
-    assert len([path for path in calls if "/commits/" in path]) == 30
+    assert len([path for path in calls if "/commits/" in path]) == 32
     path = tmp_path / "profile.json"
     profile.write(path)
     assert Profile.read(path) == profile

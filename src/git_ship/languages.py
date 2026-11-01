@@ -26,7 +26,9 @@ EXTENSIONS = _index("extensions")
 EXTENSIONS.update({ext: tuple(names) for ext, names in DATA.get("overrides", {}).items()})
 
 
-def file_language(filename: str, available: dict[str, int]) -> str | None:
+def file_language(
+    filename: str, available: dict[str, int], *, allow_unreported: bool = False
+) -> str | None:
     path = PurePosixPath(filename)
     candidates = FILENAMES.get(path.name, ())
     if not candidates:
@@ -41,4 +43,23 @@ def file_language(filename: str, available: dict[str, int]) -> str | None:
         reported = group if group in available else name
         if available.get(reported, 0) > 0:
             matches.add(reported)
-    return min(matches, key=lambda n: (-available[n], n)) if matches else None
+    if matches:
+        return min(matches, key=lambda n: (-available[n], n))
+    if allow_unreported:
+        # README/workflow languages are commonly excluded from GitHub's byte
+        # totals. Prefer their conventional interpretation over obscure dialects.
+        conventional = {
+            ".md": "Markdown",
+            ".markdown": "Markdown",
+            ".yml": "YAML",
+            ".yaml": "YAML",
+            ".json": "JSON",
+            ".toml": "TOML",
+            ".txt": "Text",
+        }.get(path.suffix.lower())
+        if conventional in candidates:
+            return conventional
+        reported = {DATA["languages"][name].get("group", name) for name in candidates}
+        if len(reported) == 1:
+            return next(iter(reported))
+    return None

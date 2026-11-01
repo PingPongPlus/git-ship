@@ -17,7 +17,7 @@ Turn your public GitHub commits into an animated fleet for your profile README. 
 One heavy ship combines all qualifying commits. **Large container = 6 commits; small = 1.** The hull shows the exact total, plus overflow when full.
 
 Enable it with `huge-cargo-ship: 'true'` under the workflow's **Generate fleet → with:** section.
-Add `cargo-logos: 'true'` for language-marked containers: six Java commits make one Java container. Leftovers share mixed containers; each commit counts once.
+Add `cargo-logos: 'true'` for language-marked containers: six Java commits make one Java container. README edits appear as `MD`, workflows as `YAML`. Leftovers share mixed containers; each commit counts once.
 
 ## Set up in 4 steps
 

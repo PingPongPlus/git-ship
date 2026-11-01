@@ -132,9 +132,19 @@ def huge_ship_sprite(
     # Large ISO-like container panels. Six columns, up to five supported tiers.
     cargo = counts["visible_large"]
     column_order = (2, 3, 1, 4, 0, 5)
+
+    def position(index):
+        if plan is None:
+            tier, offset = divmod(index, 6)
+            return column_order[offset], tier
+        # Adjacent entries in the grouped cargo plan stay adjacent on deck:
+        # fill supported stacks from left to right, rather than center-out rows.
+        tiers = max(1, math.ceil(cargo / 6))
+        column, tier = divmod(index, tiers)
+        return column, tier
+
     for index in range(cargo):
-        tier, offset = divmod(index, 6)
-        column = column_order[offset]
+        column, tier = position(index)
         x, y = 72 + column * 28, 66 - tier * 10
         color = CONTAINERS[(column + tier * 2) % len(CONTAINERS)]
         rect((x, y, x + 26, y + 9), HULL_EDGE)
@@ -210,8 +220,8 @@ def huge_ship_sprite(
         paint_text(d, (210, 85), f"+{counts['overflow_commits']}", GOLD)
     if plan is not None:
         for index, box in enumerate(plan["large"]):
-            tier, offset = divmod(index, 6)
-            x, y = 72 + column_order[offset] * 28, 66 - tier * 10
+            column, tier = position(index)
+            x, y = 72 + column * 28, 66 - tier * 10
             image.alpha_composite(container(box["label"]), (x, y))
     assert set(image.getchannel("A").tobytes()) == {0, 255}
     return image

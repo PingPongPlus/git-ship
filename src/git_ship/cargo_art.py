@@ -47,7 +47,8 @@ def container(language):
     d = ImageDraw.Draw(tile)
     if language not in STYLES:
         d.rectangle((1, 1, 25, 8), fill="#788e98")
-        label = "MIX" if language == "Mixed" else language_style(language, Config()).label[:4]
+        labels = {"Mixed": "MIX", "Markdown": "MD", "Text": "TXT"}
+        label = labels.get(language, language_style(language, Config()).label[:4])
         paint_text(d, ((27 - (len(label) * 6 - 1)) // 2, 2), label, WHITE)
         return tile
     color, label = STYLES[language]
