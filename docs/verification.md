@@ -313,7 +313,7 @@ commit footer. Existing art occludes rain, followed by beam lighting and caption
 
 The 27 rain checks cover approved pixels, falling-to-impact timing and cleanup,
 seeded open-water targets, unchanged cargo/layout, exact existing art pixels,
-loop closure, quiet scenes, disabled-image preservation, configuration overrides,
+loop closure, quiet scenes, unchanged disabled render paths, configuration overrides,
 real action execution and decoded GIF cleanup. Lint, formatting and wheel/sdist
 build passed alongside the full 385-test suite. Hosted CI exercises rain through
 the root action's local smoke job.

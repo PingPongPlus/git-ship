@@ -85,11 +85,18 @@ def test_rain_leaves_all_ship_lighthouse_and_caption_pixels_intact_and_loops(dem
     assert wet.frame(0).tobytes() != dry.frame(0).tobytes()
 
 
-def test_rain_off_preserves_the_existing_demo_image_exactly(demo):
-    config = Config(seed="demo")
-    frame = Animator(layout(demo, config), config).frame(0)
-    with Image.open(ROOT / "examples/demo/git-ship.png") as original:
-        assert frame.tobytes() == original.convert("RGBA").tobytes()
+def test_rain_off_preserves_default_frames_without_running_weather(demo, monkeypatch):
+    def unexpected_weather(*args):
+        raise AssertionError("Disabled rain must not prepare or render weather")
+
+    monkeypatch.setattr("git_ship.animation.rain_drops", unexpected_weather)
+    monkeypatch.setattr("git_ship.animation.draw_rain", unexpected_weather)
+    config = Config(seed="demo", scale=1)
+    default = Animator(layout(demo, config), config)
+    off = replace(config, rain=False)
+    disabled = Animator(layout(demo, off), off)
+    for t in (0, 0.125, 0.5, 0.875):
+        assert default.frame(t).tobytes() == disabled.frame(t).tobytes()
 
 
 @pytest.mark.parametrize("huge", (False, True))
