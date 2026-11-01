@@ -91,7 +91,11 @@ def test_classified_history_deduplicates_across_repos_and_counts_docs_once(demo)
     )
     repo = Repository("code", demo.username, False, False, None, {"Java": 100}, commits)
     profile = replace(demo, repositories=(repo, replace(repo, name="copy")))
-    assert dict(aggregate_languages(profile, Config())) == {"Git": 1, "Java": 1}
+    assert dict(aggregate_languages(profile, Config())) == {"Java": 1}
+    assert dict(aggregate_languages(profile, Config(include_non_code=True))) == {
+        "Git": 1,
+        "Java": 1,
+    }
     for coverage in ("sampled-language", "complete-metadata"):
         with pytest.raises(ValueError, match="fresh"):
             layout(
@@ -200,7 +204,7 @@ def test_live_logo_scan_is_complete_uncapped_and_cache_marks_primary_coverage(
     monkeypatch.setattr(client, "request", request)
     profile = client.fetch(config)
     assert profile.commit_coverage == "complete-file-language"
-    assert dict(aggregate_languages(profile, config)) == {"Java": 30, "Markdown": 1}
+    assert dict(aggregate_languages(profile, config)) == {"Java": 30}
     assert len(profile.repositories[0].commits) == 30
     assert len([path for path in calls if "/commits/" in path]) == 32
     path = tmp_path / "profile.json"

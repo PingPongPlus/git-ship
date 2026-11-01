@@ -43,7 +43,7 @@ def complete_profile(repositories=(), config=None):
 
 
 def test_aggregate_deduplicates_mixed_language_and_cross_repository_shas_and_counts_docs():
-    config = Config(huge_cargo_ship=True, exclude=("excluded",))
+    config = Config(huge_cargo_ship=True, exclude=("excluded",), include_non_code=True)
     start = OBSERVED - timedelta(days=config.activity_window)
     shared = commit(1, ("Java", "Python"))
     profile = complete_profile(
@@ -67,8 +67,8 @@ def test_aggregate_deduplicates_mixed_language_and_cross_repository_shas_and_cou
         config,
     )
     assert aggregate_commits(profile, config) == 4
-    assert aggregate_commits(complete_profile(), Config(huge_cargo_ship=True)) == 0
-    assert aggregate_commits(complete_profile((repo("empty"),)), Config()) == 0
+    assert aggregate_commits(complete_profile(config=config), config) == 0
+    assert aggregate_commits(complete_profile((repo("empty"),), config=config), config) == 0
 
 
 def test_full_classified_fixture_supports_windows_and_selection_without_live_scope_claims(demo):
@@ -132,15 +132,16 @@ def test_metadata_only_cache_roundtrip_preserves_complete_count_without_inventin
     repository = replace(
         repo("one", tuple(commit(i, ("Java",)) for i in range(25))), languages={"Java": 100}
     )
-    profile = complete_profile((repository,))
-    assert aggregate_commits(profile, Config()) == 25
+    config = Config(include_non_code=True)
+    profile = complete_profile((repository,), config=config)
+    assert aggregate_commits(profile, config) == 25
     assert rank_languages(profile, Config())[0].cargo is None
     path = tmp_path / "profile.json"
     profile.write(path)
     assert json.loads(path.read_text())["schema_version"] == 3
     restored = Profile.read(path)
     assert restored == profile
-    assert aggregate_commits(restored, Config()) == 25
+    assert aggregate_commits(restored, config) == 25
     assert "token" not in path.read_text().lower()
 
 
@@ -165,7 +166,11 @@ def test_huge_fetch_reads_all_metadata_pages_and_repositories_without_language_o
 ):
     client = GitHubClient()
     config = Config(
-        username="sailor", huge_cargo_ship=True, ships=0, observation_date=date(2026, 10, 1)
+        username="sailor",
+        huge_cargo_ship=True,
+        ships=0,
+        observation_date=date(2026, 10, 1),
+        include_non_code=True,
     )
     calls = []
     names = ("code", "docs", "archive", "extra0", "extra1", "extra2", "extra3", "extra4", "empty")

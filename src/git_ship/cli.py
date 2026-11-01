@@ -55,6 +55,12 @@ def parser() -> argparse.ArgumentParser:
         help="show the full commit total at the bottom right in fleet mode",
     )
     render.add_argument(
+        "--include-non-code",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="include documentation, config, markup and unclassified commits (off by default)",
+    )
+    render.add_argument(
         "--rain",
         action=argparse.BooleanOptionalAction,
         default=None,
@@ -100,6 +106,7 @@ def main(argv: list[str] | None = None) -> int:
             "cargo_logos",
             "display_commits",
             "rain",
+            "include_non_code",
             "observation_date",
         )
         overrides = {k: getattr(args, k) for k in keys}

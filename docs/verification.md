@@ -35,7 +35,7 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **385 passed** in 10.25 seconds, with no live API required. |
+| `pytest -q` | **418 passed** in 11.06 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
@@ -276,8 +276,8 @@ Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 
 Huge demo: `examples/huge-demo/`, using seed `huge-demo`, the same month fixture,
 and the new watermark wording. It exports **800×320**, **100 frames at 10 fps**,
-**10 seconds**, **943,039 GIF bytes** and **6,400 PNG bytes**. Transparency ranges
-from **63.2984375% to 76.628125%** across the loop. Its larger ship has its own
+**10 seconds**, with rain enabled, **1,014,008 GIF bytes** and **7,191 PNG bytes**.
+Transparency ranges from **63.028125% to 76.3359375%** across the loop. Its larger ship has its own
 transparency checks; the standard fleet's 80% ray-off check remains unchanged.
 The 44-commit total is represented by seven six-commit containers and two small
 ones, with no overflow. Both modes' regenerated contact sheets were inspected.
@@ -323,3 +323,24 @@ the root action's local smoke job.
 fleet export at `out/rain-fleet-implemented/` is 1,049,176 GIF bytes and 7,920 PNG
 bytes. Both decoded exactly against every rendered RGBA frame, with binary
 transparency. Both were visually inspected. The normal dry demos remain intact.
+
+## Programming and scripting commits by default
+
+The default now filters cargo and displayed totals to Linguist's `programming`
+category, including scripting languages. The pinned language map retains its
+upstream category for all 838 languages. Documentation, data/config, markup and
+unknown-only commits are omitted unless `include-non-code` is enabled.
+Mixed source/documentation commits are assigned to their eligible code language,
+without inflating the global SHA count. The option is supported in the action,
+CLI and TOML, and is part of cached live scope to prevent stale all-commit totals.
+
+The new checks cover eligible language categories, docs-only quiet scenes, SHA
+deduplication, source changes overwhelmed by README edits, both huge variants,
+fleet totals, old cache scopes, explicit opt-in, CLI overrides and the real action
+entry point. Lint, formatting, 418 tests and wheel/source builds passed. The main
+huge-ship README demo was regenerated with rain and exact decoded-frame auditing.
+
+A live 2026-11-01 past-month audit of PingPongPlus used 117 requests and no
+warnings. The programming-only result was 27 unique commits: Python 18 and
+Java 9. No README, workflow, config or unknown containers were emitted, and the
+100-frame GIF matched the intended rendered frames exactly.

@@ -49,6 +49,10 @@ inputs:
     description: Enable pixel rain and ocean impact ripples (off by default)
     required: false
     default: ''
+  include-non-code:
+    description: Include documentation, config, markup and unknown commits (off by default)
+    required: false
+    default: ''
   demo:
     description: Render the bundled fixture entirely offline (for smoke tests)
     required: false
@@ -87,6 +91,7 @@ runs:
         SHIP_DISPLAY_COMMITS: ${{ inputs.display-commits }}
         SHIP_CARGO_LOGOS: ${{ inputs.cargo-logos }}
         SHIP_RAIN: ${{ inputs.rain }}
+        SHIP_INCLUDE_NON_CODE: ${{ inputs.include-non-code }}
         SHIP_DEMO: ${{ inputs.demo }}
         SHIP_REPOSITORY_OWNER: ${{ github.repository_owner }}
         GITHUB_TOKEN: ${{ inputs.token }}

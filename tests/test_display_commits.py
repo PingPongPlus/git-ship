@@ -27,7 +27,12 @@ def test_fleet_counter_fetches_complete_total_without_changing_capped_language_s
     monkeypatch, tmp_path
 ):
     client = GitHubClient()
-    config = Config(username="sailor", display_commits=True, observation_date=date(2026, 10, 1))
+    config = Config(
+        username="sailor",
+        display_commits=True,
+        observation_date=date(2026, 10, 1),
+        include_non_code=True,
+    )
     calls = []
 
     def item(number):

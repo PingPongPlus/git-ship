@@ -153,7 +153,10 @@ Use `huge_cargo_ship = true` in TOML, or `--no-huge-cargo-ship` to override it o
 The mode defaults to off. Its separate [demo](../examples/huge-demo/preview.html)
 shows 44 fixture commits as seven large containers and two small containers.
 
-Plain huge mode fetches complete commit metadata without language or file-detail calls.
+The default huge mode classifies changed files even without container symbols,
+so its total counts programming and scripting commits rather than README/config
+edits. Only `include-non-code: 'true'` with symbols disabled uses the faster
+metadata-only scan without language or file-detail calls.
 Schema-3 caches record coverage, observation time, window and repository filters.
 Sampled fleet caches without a separately scanned `commit_total`, and schema-1/2
 caches, cannot establish an exact aggregate total: fetch a fresh profile with
@@ -174,9 +177,20 @@ detected when omitted from GitHub's language-byte totals, including Markdown
 READMEs, YAML workflows, deleted source languages and build scripts.
 The language with the greatest sum of changed lines
 wins; ties use alphabetical order. Zero-line changes have weight one, and renames
-consider both filenames. Markdown appears as `MD`, workflow/config YAML as
-`YAML`, and genuinely unknown files use `Git`. Ambiguous extensions without a
-repository-language match remain unknown rather than guessing.
+consider both filenames. By default only Linguist's `programming` category is
+eligible, including Shell, PowerShell, Python, JavaScript and other scripting
+languages. Documentation, data/config formats, markup (including HTML/CSS/SVG),
+and unknown files are excluded. Mixed code-and-doc commits count once and are
+assigned to the eligible code language with the most changed lines.
+
+Use `include-non-code: 'true'`, TOML `include_non_code = true`, or CLI
+`--include-non-code` to include these other changes; `false` or
+`--no-include-non-code` restores the default. In that view Markdown appears as
+`MD`, YAML as `YAML`, and genuinely unknown files use `Git`. Ambiguous extensions
+without a repository-language match remain unknown rather than guessing.
+The filter applies consistently to the fleet, either huge-ship variant and all
+displayed totals. Cached live profiles record this scope and require refetching
+when it changes; older unscoped caches represent the previous all-commit view.
 
 Full six-commit groups get single-language containers. Leftovers fill mixed
 containers marked `MIX`; the last zero to five commits retain small boxes.
@@ -205,6 +219,7 @@ large/small container counts, `overflow_commits`, and
 | `data-window` | `day`, `week`, `month`, or `year`; empty uses TOML `activity_window`, then 30 days |
 | `lighthouse-beam` | `true` or `false`; empty uses TOML `lighthouse_beam`, enabled by default |
 | `rain` | `true` or `false`; empty uses TOML `rain`, disabled by default |
+| `include-non-code` | `true` or `false`; include docs/config/markup/unknown commits, disabled by default |
 | `watermark` | `true` or `false`; empty uses TOML `watermark`, enabled by default |
 | `display-commits` | `true` or `false`; empty uses TOML `display_commits`, disabled by default; fleet total at bottom right |
 | `huge-cargo-ship` | `true` or `false`; empty uses TOML `huge_cargo_ship`, disabled by default |
@@ -299,6 +314,7 @@ Normalized schema-3 profiles record commit coverage and repository filters along
 | `seed` | fresh random value | Optional string/integer to reproduce positions and ship types; omit for a fresh fleet on each run |
 | `lighthouse_beam` | true | Rotating lighthouse ray; set false to disable |
 | `rain` | false | Slanted pixel rain and miniature ocean impact ripples in either ship mode |
+| `include_non_code` | false | Count only programming/scripting by default; true also includes non-code commits |
 | `watermark` | true | Top-left Git Ship and data-period label; set false to disable |
 | `display_commits` | false | Full commit total at the bottom right of the standard fleet |
 | `huge_cargo_ship` | false | One aggregate ship with six-commit large containers; replaces the standard fleet |
@@ -333,8 +349,9 @@ Enable `display-commits: 'true'`, `display_commits = true` in TOML, or
 right. Disable it with `false` or `--no-display-commits`. This is independent of
 the watermark and reserves space below the ships. It counts distinct authored
 commits across all selected public repositories in the selected period, including
-docs-only commits, without the 20-container limit or mixed-language duplicates.
-Enabling it adds a complete metadata scan; schema-3 caches save its total with
+docs-only commits only when `include-non-code` is enabled, without the 20-container
+limit or mixed-language duplicates. Enabling the total adds a complete scan;
+schema-3 caches save its total with
 the observation instant, window and repository filters. Older sampled caches
 must be fetched again. Huge Cargo Ship keeps its existing total on the hull.
 

@@ -14,7 +14,7 @@ from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 
 from .config import Config
-from .languages import file_language
+from .languages import file_language, is_programming
 from .model import (
     CARGO_LIMIT,
     Commit,
@@ -151,7 +151,13 @@ class GitHubClient:
         return [item for page in self.iter_pages(path) for item in page]
 
     def changed_languages(
-        self, base: str, sha: str, available: dict[str, int], *, primary_only: bool = False
+        self,
+        base: str,
+        sha: str,
+        available: dict[str, int],
+        *,
+        primary_only: bool = False,
+        programming_only: bool = False,
     ) -> tuple[str, ...]:
         path = f"{base}/commits/{sha}?per_page=100"
         languages = set()
@@ -176,8 +182,14 @@ class GitHubClient:
                 # language once, whether the change adds, deletes or renames it.
                 affected = set()
                 for name in (entry["filename"], entry.get("previous_filename")):
-                    if isinstance(name, str) and (
-                        language := file_language(name, available, allow_unreported=primary_only)
+                    if (
+                        isinstance(name, str)
+                        and (
+                            language := file_language(
+                                name, available, allow_unreported=primary_only
+                            )
+                        )
+                        and (not programming_only or is_programming(language))
                     ):
                         languages.add(language)
                         affected.add(language)
@@ -236,11 +248,17 @@ class GitHubClient:
                 for item in page:
                     commit = self.authored_commit(item, profile.username, start, end)
                     if commit is not None and commit.sha not in seen:
-                        if config.huge_cargo_ship and config.cargo_logos:
+                        if not config.include_non_code or (
+                            config.huge_cargo_ship and config.cargo_logos
+                        ):
                             commit = replace(
                                 commit,
                                 languages=self.changed_languages(
-                                    base, commit.sha, repo.languages, primary_only=True
+                                    base,
+                                    commit.sha,
+                                    repo.languages,
+                                    primary_only=True,
+                                    programming_only=not config.include_non_code,
                                 ),
                             )
                         records.append(commit)
@@ -378,7 +396,7 @@ class GitHubClient:
                     continue
                 owner, name = quote(repo.owner, safe=""), quote(repo.name, safe="")
                 languages = {}
-                if not config.huge_cargo_ship or config.cargo_logos:
+                if not config.huge_cargo_ship or config.cargo_logos or not config.include_non_code:
                     languages, _ = self.request(f"/repos/{owner}/{name}/languages")
                 repos.append(
                     Repository(
@@ -402,7 +420,9 @@ class GitHubClient:
                 profile,
                 repositories=self.load_aggregate_commits(profile, config, observed),
                 cargo_window=config.activity_window,
-                commit_coverage="complete-metadata",
+                commit_coverage=(
+                    "complete-metadata" if config.include_non_code else "complete-file-language"
+                ),
                 commit_filters=commit_filter_signature(config),
             )
             commit_total = aggregate_commits(complete, config)
@@ -416,7 +436,11 @@ class GitHubClient:
                 "observed_at": observed.isoformat(),
                 "cargo_window": config.activity_window,
                 "commit_coverage": (
-                    ("complete-file-language" if config.cargo_logos else "complete-metadata")
+                    (
+                        "complete-file-language"
+                        if config.cargo_logos or not config.include_non_code
+                        else "complete-metadata"
+                    )
                     if config.huge_cargo_ship
                     else "sampled-language"
                 ),

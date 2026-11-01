@@ -124,6 +124,7 @@ def export(
         report["layout_seed"] = scene.layout_seed
         report["lighthouse_beam"] = config.lighthouse_beam
         report["rain"] = config.rain
+        report["include_non_code"] = config.include_non_code
         report["watermark"] = config.watermark
         report["watermark_text"] = (
             watermark_label(config.activity_window) if config.watermark else None

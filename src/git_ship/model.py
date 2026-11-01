@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import Config
+from .languages import is_programming
 
 CARGO_LIMIT = 20
 COMMIT_COVERAGE = {
@@ -29,6 +30,7 @@ def commit_filter_signature(config: Config) -> dict[str, Any]:
         "include_archived": config.include_archived,
         "include": list(config.include),
         "exclude": list(config.exclude),
+        "include_non_code": config.include_non_code,
     }
 
 
@@ -139,12 +141,16 @@ class Profile:
             raise ValueError("commit_coverage must identify sampled or complete commit data")
         filters = data.get("commit_filters") if schema == 3 else None
         if filters is not None:
+            # Older complete caches counted documentation/config/unknown commits.
+            if isinstance(filters, dict):
+                filters = {"include_non_code": True, **filters}
             if (
                 not isinstance(filters, dict)
-                or filters.keys() != {"include_forks", "include_archived", "include", "exclude"}
+                or filters.keys()
+                != {"include_forks", "include_archived", "include", "exclude", "include_non_code"}
                 or any(
                     type(filters[name]) is not bool
-                    for name in ("include_forks", "include_archived")
+                    for name in ("include_forks", "include_archived", "include_non_code")
                 )
                 or any(
                     not isinstance(filters[name], (list, tuple))
@@ -272,6 +278,12 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
             )
     if profile.commit_total is not None:
         return profile.commit_total
+    if (
+        not config.include_non_code
+        and profile.commit_coverage != "complete-language"
+        and (profile.commit_coverage != "complete-file-language")
+    ):
+        raise ValueError("programming-only totals need classified commits; fetch a fresh profile")
     start, end = commit_window(observed, config.activity_window)
     shas = set()
     for repo in profile.repositories:
@@ -285,6 +297,7 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
             if (
                 commit.author.casefold() == profile.username.casefold()
                 and start < parse_timestamp(commit.committed_at) <= end
+                and (config.include_non_code or any(is_programming(n) for n in commit.languages))
             ):
                 shas.add(commit.sha)
     return len(shas)
@@ -308,7 +321,11 @@ def aggregate_languages(profile: Profile, config: Config) -> tuple[tuple[str, in
             if commit.author.casefold() == profile.username.casefold() and (
                 start < parse_timestamp(commit.committed_at) <= end
             ):
-                candidates.setdefault(commit.sha, set()).update(commit.languages)
+                names = {
+                    n for n in commit.languages if config.include_non_code or is_programming(n)
+                }
+                if names or config.include_non_code:
+                    candidates.setdefault(commit.sha, set()).update(names)
     counts: dict[str, int] = {}
     for names in candidates.values():
         name = min(names, key=lambda n: (n.casefold(), n)) if names else "Git"
@@ -342,6 +359,8 @@ def rank_languages(profile: Profile, config: Config) -> tuple[Language, ...]:
             max(0.0, 1 - age / config.activity_window) if age is not None and age >= 0 else 0.0
         )
         for name, count in repo.languages.items():
+            if not config.include_non_code and not is_programming(name):
+                continue
             counts[name] = counts.get(name, 0) + count
             recent[name] = recent.get(name, 0.0) + count * recency
             if count > 0 and (repo.commits is None or cached_window_changed):
@@ -352,7 +371,9 @@ def rank_languages(profile: Profile, config: Config) -> tuple[Language, ...]:
             if not start < parse_timestamp(commit.committed_at) <= end:
                 continue
             for name in commit.languages:
-                if repo.languages.get(name, 0) > 0:
+                if repo.languages.get(name, 0) > 0 and (
+                    config.include_non_code or is_programming(name)
+                ):
                     commit_shas.setdefault(name, set()).add(commit.sha)
     total = sum(counts.values())
     cargo: dict[str, int | None] = {

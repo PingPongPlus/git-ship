@@ -45,6 +45,11 @@ def run() -> int:
                 raise ValueError("display-commits must be true or false")
             args.append("--display-commits" if commits == "true" else "--no-display-commits")
         data_window = os.environ.get("SHIP_DATA_WINDOW", "").strip().lower()
+        non_code = os.environ.get("SHIP_INCLUDE_NON_CODE", "").strip().lower()
+        if non_code:
+            if non_code not in ("true", "false"):
+                raise ValueError("include-non-code must be true or false")
+            args.append("--include-non-code" if non_code == "true" else "--no-include-non-code")
         rain = os.environ.get("SHIP_RAIN", "").strip().lower()
         if rain:
             if rain not in ("true", "false"):

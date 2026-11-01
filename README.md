@@ -1,6 +1,6 @@
 # Git Ship
 
-Turn your public GitHub commits into an animated fleet for your profile README. No server or personal access token needed.
+Turn your public programming and scripting commits into an animated fleet for your profile README. No server or personal access token needed.
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="examples/demo/git-ship.png">
@@ -17,7 +17,7 @@ Turn your public GitHub commits into an animated fleet for your profile README. 
 One heavy ship combines all qualifying commits. **Large container = 6 commits; small = 1.** The hull shows the exact total, plus overflow when full.
 
 Enable it with `huge-cargo-ship: 'true'` under the workflow's **Generate fleet → with:** section.
-Add `cargo-logos: 'true'` for language-marked containers: six Java commits make one Java container. README edits appear as `MD`, workflows as `YAML`. Leftovers share mixed containers; each commit counts once.
+Add `cargo-logos: 'true'` for language-marked containers: six Java commits make one Java container. Leftovers share mixed containers; each commit counts once. Rain is enabled in this demo with `rain: 'true'`.
 
 ## Set up in 4 steps
 
@@ -49,6 +49,7 @@ That's it. Your fleet updates **daily** using the **past month** of data by defa
 | Rain and ocean ripples | Add `rain: 'true'` in the same place. [Preview](examples/rain-demo/git-ship.gif). |
 | Hide the watermark | Add `watermark: 'false'` in the same place. |
 | Show commit total | Add `display-commits: 'true'` to show the fleet's full total at the bottom right. |
+| Include docs/config commits | Add `include-non-code: 'true'`. By default, only programming and scripting commits count. |
 
 ## Reading the standard fleet
 

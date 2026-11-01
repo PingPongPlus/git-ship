@@ -13,6 +13,11 @@ from pathlib import PurePosixPath
 DATA = json.loads(files("git_ship").joinpath("assets/file-languages.json").read_text())
 
 
+def is_programming(name: str) -> bool:
+    """Linguist's programming category includes scripting and build languages."""
+    return DATA["languages"].get(name, {}).get("type") == "programming"
+
+
 def _index(key: str) -> dict[str, tuple[str, ...]]:
     index: dict[str, list[str]] = {}
     for language, spec in DATA["languages"].items():
