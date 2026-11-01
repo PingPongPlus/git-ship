@@ -129,10 +129,11 @@ def export(
         report["watermark_text"] = (
             watermark_label(config.activity_window) if config.watermark else None
         )
-        report["display_commits"] = scene.fleet_commits is not None
-        report["commit_counter_text"] = (
-            commit_label(scene.fleet_commits) if scene.fleet_commits is not None else None
-        )
+        counter = scene.fleet_commits
+        if config.huge_cargo_ship and scene.huge_ship is None and scene.authored_commits:
+            counter = scene.authored_commits
+        report["display_commits"] = counter is not None
+        report["commit_counter_text"] = commit_label(counter) if counter is not None else None
         if scene.fleet_commits is not None:
             report["total_commits"] = scene.fleet_commits
         frames[0].save(root / "git-ship.png")
@@ -155,7 +156,10 @@ def export(
         ]
         if config.huge_cargo_ship:
             counts = huge_cargo_counts(scene.total_commits)
-            report["total_commits"] = counts["total"]
+            report["cargo_commits"] = counts["total"]
+            report["total_commits"] = (
+                scene.authored_commits if scene.authored_commits is not None else counts["total"]
+            )
             report["large_containers"] = counts["large"]
             report["small_containers"] = counts["small"]
             report["displayed_large_containers"] = counts["visible_large"]

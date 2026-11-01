@@ -7,10 +7,15 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from PIL import Image, ImageChops, ImageDraw
 
+from git_ship.animation import Animator
 from git_ship.cli import main
 from git_ship.config import Config, load_config
+from git_ship.export import export
+from git_ship.font import paint_text
 from git_ship.github import GitHubClient
+from git_ship.huge_ship import huge_ship_sprite
 from git_ship.languages import DATA, is_programming
 from git_ship.layout import layout
 from git_ship.model import (
@@ -21,6 +26,7 @@ from git_ship.model import (
     aggregate_languages,
     rank_languages,
 )
+from git_ship.sprites import SHADE
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -196,7 +202,12 @@ def test_live_plain_huge_and_fleet_totals_respect_scope_without_cargo_logos(
         profile = client.fetch(config)
         assert aggregate_commits(profile, config) == (3 if all_commits else 1)
         scene = layout(profile, config)
-        assert (scene.total_commits if huge else scene.fleet_commits) == (3 if all_commits else 1)
+        if huge:
+            assert scene.total_commits == (3 if all_commits else 1)
+            assert scene.authored_commits == 3
+        else:
+            assert scene.fleet_commits == 3
+            assert profile.authored_total == 3
 
 
 @pytest.mark.parametrize("include", (False, True))
@@ -225,9 +236,8 @@ def test_cli_non_code_override_and_toml_validation(tmp_path, capsys, include):
         == 0
     )
     report = json.loads(capsys.readouterr().out)
-    assert report["include_non_code"] is include and report["total_commits"] == (
-        8 if include else 3
-    )
+    assert report["include_non_code"] is include and report["total_commits"] == 8
+    assert report["cargo_commits"] == (8 if include else 3)
     assert report["decoded_frames_match"]
     assert load_config(config).include_non_code is not include
 
@@ -271,3 +281,82 @@ def test_non_code_option_defaults_off_and_rejects_non_booleans():
     assert not Config().include_non_code
     with pytest.raises(ValueError, match="include_non_code must be true or false"):
         Config(include_non_code="true")
+
+
+def test_real_authored_counter_stays_unfiltered_while_cargo_is_programming_only(tmp_path):
+    profile = mixed_profile()
+    config = Config(huge_cargo_ship=True, cargo_logos=True, rain=True, scale=1, fps=5, duration=2)
+    scene = layout(profile, config)
+    assert scene.total_commits == 3 and scene.authored_commits == 8
+    assert aggregate_commits(profile, config, all_authored=True) == 8
+    report, _ = export(scene, config, tmp_path)
+    assert report["total_commits"] == 8 and report["cargo_commits"] == 3
+    assert report["cargo_languages"] == {"Java": 1, "Python": 1, "Shell": 1}
+    assert report["large_containers"] == 0 and report["small_containers"] == 3
+    assert report["rain"] and report["decoded_frames_match"]
+    sprite = Animator(scene, config).huge_sprite
+    caption = Image.new("RGBA", sprite.size)
+    paint_text(ImageDraw.Draw(caption), (26, 85), "8 COMMITS", SHADE)
+    for y in range(85, 92):
+        for x in range(26, 79):
+            if caption.getpixel((x, y))[3]:
+                assert sprite.getpixel((x, y)) == caption.getpixel((x, y))
+
+
+def test_changing_hull_counter_does_not_change_container_count_or_art():
+    base = huge_ship_sprite(13, (("Java", 13),))
+    actual = huge_ship_sprite(13, (("Java", 13),), counter_total=100)
+    diff = ImageChops.difference(base, actual)
+    mask = Image.new("L", base.size, 255)
+    ImageDraw.Draw(mask).rectangle((26, 85, 132, 91), fill=0)
+    assert not ImageChops.multiply(diff.convert("RGB"), mask.convert("RGB")).getbbox()
+    with pytest.raises(ValueError, match="smaller than cargo"):
+        huge_ship_sprite(13, counter_total=12)
+
+
+def test_docs_only_period_still_displays_real_commit_total_without_code_cargo(tmp_path):
+    profile = mixed_profile()
+    profile = replace(
+        profile,
+        repositories=(
+            replace(profile.repositories[0], commits=profile.repositories[0].commits[:5]),
+        ),
+    )
+    config = Config(huge_cargo_ship=True, cargo_logos=True, rain=True, scale=1, fps=5, duration=2)
+    scene = layout(profile, config)
+    assert scene.huge_ship is None and scene.authored_commits == 5
+    report, _ = export(scene, config, tmp_path)
+    assert report["total_commits"] == 5 and report["cargo_commits"] == 0
+    assert report["display_commits"] and report["commit_counter_text"] == "5 COMMITS"
+    assert report["decoded_frames_match"]
+
+
+def test_separate_cached_totals_roundtrip_and_old_filtered_scalar_cannot_fake_real_total(tmp_path):
+    from git_ship.model import commit_filter_signature
+
+    config = Config()
+    profile = replace(
+        mixed_profile(),
+        commit_coverage="sampled-language",
+        commit_total=3,
+        cargo_window=30,
+        observed_at="2026-10-01T23:59:59.999999Z",
+        commit_filters=commit_filter_signature(config),
+    )
+    with pytest.raises(ValueError, match="fresh"):
+        aggregate_commits(profile, config, all_authored=True)
+    complete = replace(profile, authored_total=8)
+    path = tmp_path / "profile.json"
+    complete.write(path)
+    restored = Profile.read(path)
+    assert aggregate_commits(restored, config) == 3
+    assert aggregate_commits(restored, config, all_authored=True) == 8
+    assert layout(restored, replace(config, display_commits=True)).fleet_commits == 8
+    with pytest.raises(ValueError, match="fresh"):
+        aggregate_commits(restored, replace(config, activity_window=7), all_authored=True)
+    raw = json.loads(path.read_text())
+    for invalid in (-1, True, "8"):
+        with pytest.raises(ValueError, match="authored_total"):
+            Profile.from_dict({**raw, "authored_total": invalid})
+    with pytest.raises(ValueError, match="smaller"):
+        Profile.from_dict({**raw, "authored_total": 2})

@@ -81,6 +81,7 @@ class Profile:
     commit_coverage: str = "sampled-language"
     commit_filters: dict[str, Any] | None = None
     commit_total: int | None = None
+    authored_total: int | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Profile:
@@ -167,8 +168,21 @@ class Profile:
         commit_total = data.get("commit_total") if schema == 3 else None
         if commit_total is not None and (type(commit_total) is not int or commit_total < 0):
             raise ValueError("commit_total must be null or a nonnegative integer")
+        authored_total = data.get("authored_total") if schema == 3 else None
+        if authored_total is not None and (type(authored_total) is not int or authored_total < 0):
+            raise ValueError("authored_total must be null or a nonnegative integer")
+        if (
+            authored_total is not None
+            and commit_total is not None
+            and authored_total < commit_total
+        ):
+            raise ValueError("authored_total cannot be smaller than the cargo commit_total")
         full_fixture = coverage == "complete-language" and cargo_window is None and filters is None
-        if commit_total is not None or (coverage != "sampled-language" and not full_fixture):
+        if (
+            commit_total is not None
+            or authored_total is not None
+            or (coverage != "sampled-language" and not full_fixture)
+        ):
             if cargo_window is None or instant is None or filters is None:
                 raise ValueError(
                     "complete live commit data requires its window, instant and filters"
@@ -184,6 +198,7 @@ class Profile:
             coverage,
             filters,
             commit_total,
+            authored_total,
         )
 
     @classmethod
@@ -245,11 +260,14 @@ def commit_window(observed: datetime, days: int) -> tuple[datetime, datetime]:
     return observed - timedelta(days=days), observed
 
 
-def aggregate_commits(profile: Profile, config: Config) -> int:
-    """Count all distinct qualifying authored SHAs, without language or visual caps."""
+def aggregate_commits(profile: Profile, config: Config, *, all_authored: bool = False) -> int:
+    """Count eligible cargo SHAs, or all authored SHAs for the independent counter."""
     if config.username and config.username.casefold() != profile.username.casefold():
         raise ValueError("aggregate profile username differs; fetch a fresh profile")
-    if profile.commit_total is None and profile.commit_coverage not in (
+    cached_total = profile.authored_total if all_authored else profile.commit_total
+    if all_authored and config.include_non_code and cached_total is None:
+        cached_total = profile.commit_total
+    if cached_total is None and profile.commit_coverage not in (
         "complete-metadata",
         "complete-language",
         "complete-primary-language",
@@ -264,6 +282,7 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
         and profile.cargo_window is None
         and profile.commit_filters is None
         and profile.commit_total is None
+        and profile.authored_total is None
     )
     if not full_fixture:
         if (
@@ -276,10 +295,11 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
                 "aggregate cache window, observation or filters differ; "
                 "fetch a fresh aggregate profile"
             )
-    if profile.commit_total is not None:
-        return profile.commit_total
+    if cached_total is not None:
+        return cached_total
     if (
-        not config.include_non_code
+        not all_authored
+        and not config.include_non_code
         and profile.commit_coverage != "complete-language"
         and (profile.commit_coverage != "complete-file-language")
     ):
@@ -297,7 +317,11 @@ def aggregate_commits(profile: Profile, config: Config) -> int:
             if (
                 commit.author.casefold() == profile.username.casefold()
                 and start < parse_timestamp(commit.committed_at) <= end
-                and (config.include_non_code or any(is_programming(n) for n in commit.languages))
+                and (
+                    all_authored
+                    or config.include_non_code
+                    or any(is_programming(n) for n in commit.languages)
+                )
             ):
                 shas.add(commit.sha)
     return len(shas)

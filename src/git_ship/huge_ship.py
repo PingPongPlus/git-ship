@@ -81,10 +81,18 @@ def language_cargo_plan(total_commits: int, language_counts: tuple[tuple[str, in
 
 
 def huge_ship_sprite(
-    total_commits: int, language_counts: tuple[tuple[str, int], ...] | None = None
+    total_commits: int,
+    language_counts: tuple[tuple[str, int], ...] | None = None,
+    *,
+    counter_total: int | None = None,
 ) -> Image.Image:
     """A wide low freighter, with one large container per six commits."""
     counts = huge_cargo_counts(total_commits)
+    counter = (
+        counts["total"] if counter_total is None else huge_cargo_counts(counter_total)["total"]
+    )
+    if counter < total_commits:
+        raise ValueError("the authored commit counter cannot be smaller than cargo")
     plan = (
         language_cargo_plan(total_commits, language_counts) if language_counts is not None else None
     )
@@ -214,8 +222,8 @@ def huge_ship_sprite(
         rect((246, top + 1, 255, top + 4), color)
         d.line((249, top + 2, 249, top + 3), fill=HULL_SHADE)
         d.line((253, top + 2, 253, top + 3), fill=HULL_SHADE)
-    unit = "COMMIT" if counts["total"] == 1 else "COMMITS"
-    paint_text(d, (26, 85), f"{counts['total']} {unit}", SHADE)
+    unit = "COMMIT" if counter == 1 else "COMMITS"
+    paint_text(d, (26, 85), f"{counter} {unit}", SHADE)
     if counts["overflow_commits"]:
         paint_text(d, (210, 85), f"+{counts['overflow_commits']}", GOLD)
     if plan is not None:

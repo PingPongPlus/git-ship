@@ -413,6 +413,7 @@ class GitHubClient:
         profile = Profile(username, observed.date(), tuple(repos), observed_at=observed.isoformat())
         repos = self.load_cargo(profile, config, observed)
         commit_total = None
+        authored_total = None
         if config.display_commits and not config.huge_cargo_ship:
             # Cargo is capped and a mixed-language commit can appear on several
             # ships. Count complete metadata separately, including docs-only repos.
@@ -426,6 +427,7 @@ class GitHubClient:
                 commit_filters=commit_filter_signature(config),
             )
             commit_total = aggregate_commits(complete, config)
+            authored_total = aggregate_commits(complete, config, all_authored=True)
         total = self.contributions(username, observed, config.activity_window)
         # Validate the same contract as offline fixtures before rendering.
         return Profile.from_dict(
@@ -446,6 +448,7 @@ class GitHubClient:
                 ),
                 "commit_filters": commit_filter_signature(config),
                 "commit_total": commit_total,
+                "authored_total": authored_total,
                 "repositories": [asdict(r) for r in repos],
                 "contributions": total,
                 "warnings": self.warnings,

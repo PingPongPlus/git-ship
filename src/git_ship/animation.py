@@ -126,6 +126,10 @@ class Animator:
             raise ValueError("scene and render mode differ; rebuild the scene with layout()")
         if config.huge_cargo_ship:
             counts = huge_cargo_counts(scene.total_commits)
+            if scene.authored_commits is not None and (
+                huge_cargo_counts(scene.authored_commits)["total"] < counts["total"]
+            ):
+                raise ValueError("authored total cannot be smaller than cargo")
             if (
                 scene.ships
                 or bool(counts["total"]) != (scene.huge_ship is not None)
@@ -148,7 +152,11 @@ class Animator:
         )
         self.lights = (lighthouse_sprite(False), lighthouse_sprite(True))
         self.huge_sprite = (
-            huge_ship_sprite(scene.huge_ship.total_commits, scene.cargo_languages)
+            huge_ship_sprite(
+                scene.huge_ship.total_commits,
+                scene.cargo_languages,
+                counter_total=scene.authored_commits,
+            )
             if scene.huge_ship
             else None
         )
@@ -212,6 +220,12 @@ class Animator:
             draw_watermark(image, self.config.activity_window)
         if self.scene.fleet_commits is not None:
             draw_commit_total(image, self.scene.fleet_commits)
+        elif (
+            self.config.huge_cargo_ship
+            and self.scene.huge_ship is None
+            and self.scene.authored_commits
+        ):
+            draw_commit_total(image, self.scene.authored_commits)
         if self.config.scale != 1:
             image = image.resize(
                 (WIDTH * self.config.scale, HEIGHT * self.config.scale), Image.Resampling.NEAREST

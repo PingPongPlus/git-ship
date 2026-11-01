@@ -47,9 +47,10 @@ class Scene:
     energy: float
     layout_seed: str = ""
     huge_ship: HugeShip | None = None
-    total_commits: int | None = None
+    total_commits: int | None = None  # Eligible cargo, before visual capacity limits.
     fleet_commits: int | None = None
     cargo_languages: tuple[tuple[str, int], ...] | None = None
+    authored_commits: int | None = None  # Real counter, independent of cargo filters.
 
 
 def placements(
@@ -134,6 +135,7 @@ def layout(profile: Profile, config: Config) -> Scene:
             vessel,
             total,
             cargo_languages=cargo_languages,
+            authored_commits=aggregate_commits(profile, config, all_authored=True),
         )
     if profile.commit_coverage in (
         "complete-metadata",
@@ -150,7 +152,9 @@ def layout(profile: Profile, config: Config) -> Scene:
         language for language in rank_languages(profile, config) if (language.cargo or 0) > 0
     )[: config.ships]
     widths = [min(round(44 + 16 * math.sqrt(language.share)), 62) for language in languages]
-    fleet_commits = aggregate_commits(profile, config) if config.display_commits else None
+    fleet_commits = (
+        aggregate_commits(profile, config, all_authored=True) if config.display_commits else None
+    )
     positions = placements(
         widths,
         rng,

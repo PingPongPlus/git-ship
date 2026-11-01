@@ -10,11 +10,11 @@ Turn your public programming and scripting commits into an animated fleet for yo
 ## Huge Cargo Ship (optional)
 
 <picture>
-  <source media="(prefers-reduced-motion: reduce)" srcset="examples/huge-demo/git-ship.png">
-  <img src="examples/huge-demo/git-ship.gif" width="800" alt="One heavy cargo ship with calm rolling water and combined commit cargo.">
+  <source media="(prefers-reduced-motion: reduce)" srcset="examples/huge-demo/git-ship.png?v=rain-20261101">
+  <img src="examples/huge-demo/git-ship.gif?v=rain-20261101" width="800" alt="One heavy cargo ship with falling rain, tiny ocean impact ripples and language cargo.">
 </picture>
 
-One heavy ship combines all qualifying commits. **Large container = 6 commits; small = 1.** The hull shows the exact total, plus overflow when full.
+One heavy ship carries your programming commits. **Large container = 6 commits; small = 1.** The hull counter shows **all authored commits** in the selected period. Overflow shows code cargo beyond deck capacity.
 
 Enable it with `huge-cargo-ship: 'true'` under the workflow's **Generate fleet → with:** section.
 Add `cargo-logos: 'true'` for language-marked containers: six Java commits make one Java container. Leftovers share mixed containers; each commit counts once. Rain is enabled in this demo with `rain: 'true'`.

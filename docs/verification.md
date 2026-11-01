@@ -35,7 +35,7 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **418 passed** in 11.06 seconds, with no live API required. |
+| `pytest -q` | **422 passed** in 11.56 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
@@ -326,7 +326,7 @@ transparency. Both were visually inspected. The normal dry demos remain intact.
 
 ## Programming and scripting commits by default
 
-The default now filters cargo and displayed totals to Linguist's `programming`
+The default now filters cargo to Linguist's `programming`
 category, including scripting languages. The pinned language map retains its
 upstream category for all 838 languages. Documentation, data/config, markup and
 unknown-only commits are omitted unless `include-non-code` is enabled.
@@ -344,3 +344,18 @@ A live 2026-11-01 past-month audit of PingPongPlus used 117 requests and no
 warnings. The programming-only result was 27 unique commits: Python 18 and
 Java 9. No README, workflow, config or unknown containers were emitted, and the
 100-frame GIF matched the intended rendered frames exactly.
+
+## Authored counters independent of cargo
+
+The hull counter and optional fleet counter now show all distinct authored
+commits in the selected public-repository/time scope, including README and
+workflow changes. Code-only filtering affects containers, never that counter.
+Huge reports separate `total_commits` from `cargo_commits`. Complete caches count
+all retained metadata, while capped fleet caches store a separate validated
+`authored_total`; a filtered scalar is never reused as a real total. A docs-only
+period can show the counter without creating code cargo or an idle cargo ship.
+
+Checks cover independent counts, mixed code/docs fixtures, unchanged container
+art when the hull counter changes, docs-only rendering, cached-scalar validation,
+old filtered caches and both fleet/huge modes. The huge demo retains rain with a
+fresh image URL, and the personal yearly workflow explicitly enables rain.

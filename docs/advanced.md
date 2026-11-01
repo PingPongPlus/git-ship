@@ -188,8 +188,12 @@ Use `include-non-code: 'true'`, TOML `include_non_code = true`, or CLI
 `--no-include-non-code` restores the default. In that view Markdown appears as
 `MD`, YAML as `YAML`, and genuinely unknown files use `Git`. Ambiguous extensions
 without a repository-language match remain unknown rather than guessing.
-The filter applies consistently to the fleet, either huge-ship variant and all
-displayed totals. Cached live profiles record this scope and require refetching
+The filter applies to cargo in the fleet and either huge-ship variant. The
+displayed commit counter always counts all authored commits in the selected
+period, including documentation/config changes, independently of this filter.
+The huge report separates `total_commits` (the counter) from `cargo_commits`
+(the commits represented by containers). Overflow applies only to cargo.
+Cached live profiles record this scope and require refetching
 when it changes; older unscoped caches represent the previous all-commit view.
 
 Full six-commit groups get single-language containers. Leftovers fill mixed
@@ -349,7 +353,7 @@ Enable `display-commits: 'true'`, `display_commits = true` in TOML, or
 right. Disable it with `false` or `--no-display-commits`. This is independent of
 the watermark and reserves space below the ships. It counts distinct authored
 commits across all selected public repositories in the selected period, including
-docs-only commits only when `include-non-code` is enabled, without the 20-container
+docs-only commits regardless of `include-non-code`, without the 20-container
 limit or mixed-language duplicates. Enabling the total adds a complete scan;
 schema-3 caches save its total with
 the observation instant, window and repository filters. Older sampled caches
