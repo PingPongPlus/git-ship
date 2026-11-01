@@ -401,7 +401,7 @@ Ordinary tests use fixtures and local temporary Git repositories, with no live A
 
 Editable artwork is documented in [artwork/README.md](../artwork/README.md). The renderer separates fetching (`github.py`), normalization/ranking (`model.py`), filename attribution (`languages.py`), validation (`config.py`), safe layout (`layout.py`), pixel art (`sprites.py`, `font.py`), animation (`animation.py`), export/audit (`export.py`) and local proof (`preview.py`). `scripts/run_action.py` runs the same CLI for any caller; `scripts/publish_assets.py` is optional and separate.
 
-The [approved reference](../references/concept-transparent.png) and [original brief](../PROMPT.md) are retained. Later cargo/window requirements extend that brief. [Verification notes](verification.md) record actual commands, measurements and remaining external checks.
+The [approved reference](../references/concept-transparent.png) is retained. [Verification notes](verification.md) record actual commands, measurements and remaining external checks.
 
 ## Troubleshooting
 
