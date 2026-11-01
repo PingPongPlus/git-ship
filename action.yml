@@ -33,6 +33,10 @@ inputs:
     description: Show the project and activity-period watermark; empty uses config (enabled by default)
     required: false
     default: ''
+  huge-cargo-ship:
+    description: Replace the fleet with one heavy ship carrying all qualifying commits
+    required: false
+    default: ''
   demo:
     description: Render the bundled fixture entirely offline (for smoke tests)
     required: false
@@ -67,6 +71,7 @@ runs:
         SHIP_DATA_WINDOW: ${{ inputs.data-window }}
         SHIP_LIGHTHOUSE_BEAM: ${{ inputs.lighthouse-beam }}
         SHIP_WATERMARK: ${{ inputs.watermark }}
+        SHIP_HUGE_CARGO_SHIP: ${{ inputs.huge-cargo-ship }}
         SHIP_DEMO: ${{ inputs.demo }}
         SHIP_REPOSITORY_OWNER: ${{ github.repository_owner }}
         GITHUB_TOKEN: ${{ inputs.token }}

@@ -11,7 +11,7 @@ WATERMARK_SHADOW = "#172f42"
 
 def watermark_label(days: int) -> str:
     period = {1: "day", 7: "week", 30: "month", 365: "year"}.get(days, f"{days} days")
-    return f"git-ship past {period} commit & shipped code"
+    return f"Git Ship — commits from the past {period}"
 
 
 def draw_watermark(image: Image.Image, days: int) -> None:

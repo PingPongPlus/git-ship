@@ -16,7 +16,7 @@ from git_ship.watermark import WATERMARK_HEIGHT, draw_watermark, watermark_label
 )
 def test_watermark_displays_selected_period_and_fits_top_left(days, period):
     label = watermark_label(days)
-    assert label == f"git-ship past {period} commit & shipped code"
+    assert label == f"Git Ship — commits from the past {period}"
     image = Image.new("RGBA", (400, 160))
     draw_watermark(image, days)
     left, top, right, bottom = image.getbbox()

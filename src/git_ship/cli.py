@@ -48,6 +48,12 @@ def parser() -> argparse.ArgumentParser:
         default=None,
         help="enable or disable the project and activity-period watermark",
     )
+    render.add_argument(
+        "--huge-cargo-ship",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="replace the language fleet with one ship for all qualifying commits",
+    )
     window = render.add_mutually_exclusive_group()
     window.add_argument("--activity-window", type=int, help="rolling activity window in days")
     presets = ", ".join(f"{name} ({days})" for name, days in DATA_WINDOWS.items())
@@ -72,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
             "seed",
             "lighthouse_beam",
             "watermark",
+            "huge_cargo_ship",
             "observation_date",
         )
         overrides = {k: getattr(args, k) for k in keys}
@@ -98,8 +105,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.cache_profile:
             profile.write(args.cache_profile)
         scene = layout(profile, config)
-        if config.ships and any(
-            language.cargo is None for language in rank_languages(profile, config)
+        if (
+            not config.huge_cargo_ship
+            and config.ships
+            and any(language.cargo is None for language in rank_languages(profile, config))
         ):
             print(
                 "git-ship: warning: cached commit data does not cover this fleet/window; "

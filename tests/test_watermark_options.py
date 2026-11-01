@@ -9,7 +9,7 @@ import pytest
 from git_ship.cli import main
 
 ROOT = Path(__file__).resolve().parents[1]
-MONTH_LABEL = "git-ship past month commit & shipped code"
+MONTH_LABEL = "Git Ship — commits from the past month"
 
 
 def action(tmp_path, watermark, configured):

@@ -5,8 +5,8 @@ CI covers Python **3.11/3.15** and runs the root composite action with Python **
 The public destination is [PingPongPlus/git-ship](https://github.com/PingPongPlus/git-ship).
 This revision targets `main` and retains the rolling 365-day preset. It fixes
 renamed-account commit attribution, samples ship positions across the sea,
-shuffles the existing ship types, and adds a configurable rotating lighthouse ray
-and period watermark. No `v1` or Marketplace release is claimed. Hosted results are available under the
+shuffles the existing ship types, and includes a configurable rotating lighthouse ray,
+period watermark and optional Huge Cargo Ship. No `v1` or Marketplace release is claimed. Hosted results are available under the
 repository's Actions tab.
 
 ## Commands and results
@@ -18,12 +18,13 @@ Commands were run from the project root with its `.venv` unless noted.
 | `/opt/homebrew/bin/python3 -m venv .venv` | Created Python 3.15 environment; the system Python 3.9.6 was too old. |
 | `python -m pip install --no-build-isolation -e .` | Package and CLI installed successfully. |
 | `ruff check .` / `ruff format --check .` | Passed. |
-| `pytest -q` | **202 passed** in 7.31 seconds, with no live API required. |
+| `pytest -q` | **283 passed** in 7.95 seconds, with no live API required. |
 | `python -m build --no-isolation` | Built wheel and source archive, including JSON mappings, fixtures and the Linguist license. |
 | `python -m pip install --no-deps --upgrade --target out/wheel-install dist/git_ship-0.1.0-py3-none-any.whl` | Installed built wheel into an isolated target for verification. |
 | From `/private/tmp`, using the absolute interpreter path and `PYTHONPATH=.../out/wheel-install`: `python -m git_ship render --demo --duration 2 --scale 1 --output-dir .../out/wheel-render` | Installed-wheel import/render smoke test; bundled offline assets and mappings work outside the source checkout. |
 | `python scripts/sprite_atlas.py` | Generated the six-language transparent sprite atlas, including 20 C++ commits represented by five large containers. |
 | `git-ship render --demo --seed demo --preview --output-dir examples/demo` | Generated and audited the full six-ship GIF/PNG, preview and contact sheet. |
+| `git-ship render --demo --huge-cargo-ship --seed huge-demo --preview --output-dir examples/huge-demo` | Generated and decoded-audited the separate huge-ship demo: 44 distinct fixture commits, seven large and two small containers. |
 | Dynamic layout tests | Check quiet/unknown language filtering, active-language discovery below inactive candidates, the six-ship maximum, placement across the sea, new layouts per render and exact seed replay. |
 | Full motion-envelope tests | Checked 140 scenes: zero through six fully loaded ships across 20 seeds each; all envelopes remain inside the canvas and disjoint. |
 | Dense packing fallback test | Forced the guaranteed-fit path with six maximum-width 62-pixel ships; all full motion envelopes remain inside the canvas and disjoint. |
@@ -115,6 +116,49 @@ grouping change, preserving approved hull and superstructure geometry. The fixed
 trawler, freighter, sail, steam and tug; ferry remains available as the seventh
 registered design without increasing the six-ship scene limit.
 
+## Huge Cargo Ship contracts
+
+The user approved the 300×110-pixel heavy hull before integration and selected
+slower, calmer water. Approved native references remain under
+`artwork/huge-ship/`. Comparisons preserve the hull, bridge, rigging and cargo
+geometry outside the new exact-total/overflow counter areas. The wake rolls once
+per loop, with a low bow curl and no airborne spray. Body drift/bob stays within
+one logical pixel; multiple-seed tests keep the full ship and water inside the
+400×160 canvas. The new demo appears directly below the standard demo in the
+short README.
+
+- `huge_cargo_ship` defaults to false, with matching CLI and action controls.
+  Enabling it replaces the entire language fleet with one aggregate vessel.
+- Complete metadata pagination counts every qualifying unique authored SHA
+  across the selected public repositories, including docs-only changes and
+  repositories with no language bytes. Mixed-language/shared commits count once.
+  No standard 20-commit or six-language early stop is used. Explicit empty Git
+  repository responses count as empty; other API failures remain errors.
+- Large containers hold six commits, and small remainder boxes hold one.
+  The deck fits 30 large boxes and up to five small boxes. The exact total is
+  always shown; `+N` shows overflow commits without changing container weights.
+  Tests cover the capacity boundary, 197 commits = 30 visible large + five
+  small + 12 overflow, and counters within the native canvas.
+- Schema-3 records distinguish sampled language data from complete metadata or
+  complete classified history. Aggregate totals reject sampled/legacy profiles,
+  missing history and changed window/observation/filters. Metadata-only caches
+  cannot render a language fleet. Schema-1/2 caches remain supported in the
+  standard mode. Explicit full classified fixtures work in both modes.
+- Huge-mode reports use `languages: []`, exact `total_commits`, six-commit
+  grouping, total/visible box counts and overflow; they do not invent an
+  aggregate programming language. A zero-commit period keeps only the lighthouse
+  and enabled decorations.
+- Real CLI/action tests verify on/off and empty-input precedence, invalid flags,
+  month selection and cache-mode diagnostics. Both renderers retain the exact
+  shared palette, binary alpha, full-frame disposal and decoded-frame audits.
+
+A read-only live aggregate audit for PingPongPlus's rolling 30-day window counted
+**59 distinct authored commits across 19 selected public repositories** in **22
+requests**, with complete metadata coverage and no warnings. It stored a
+credential-free schema-3 profile locally; no huge-mode image was published by
+this audit. These counts describe that observation instant, not a fixed account
+total. Normal scheduled profile generation remains independently configurable.
+
 ## Renamed-account undercount investigation
 
 The successful profile run before this fix reported `activity_window_days: 365`
@@ -152,7 +196,7 @@ lantern blink. The default is enabled.
 
 The default-enabled top-left label uses the existing uppercase pixel font and
 gray lettering. For the month preset it reads
-`GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE`; day, week, year and custom day counts
+`GIT SHIP — COMMITS FROM THE PAST MONTH`; day, week, year and custom day counts
 follow the selected activity window. Layout reserves a 14-pixel header for the
 label, and drawing it after the ray keeps the lettering untinted. The report
 records `watermark` and `watermark_text`. `watermark = false`, `--no-watermark`,
@@ -188,18 +232,18 @@ Fixture: `src/git_ship/assets/demo.json`, observed on **2026-10-01**.
 | Loop | Infinite; no extra closing-frame hold |
 | Layout seed | `demo` |
 | Lighthouse ray | Enabled |
-| Watermark | Enabled; `GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE` |
+| Watermark | Enabled; `GIT SHIP — COMMITS FROM THE PAST MONTH` |
 | Ship designs, in report order | tanker / trawler / freighter / sail / steam / tug |
-| GIF | **986,128 bytes**, below 2 MB target |
-| PNG | **7,036 bytes**, genuine RGBA |
-| Fully transparent pixels over every frame | **74.2953125%–84.315625%** |
+| GIF | **975,589 bytes**, below 2 MB target |
+| PNG | **7,007 bytes**, genuine RGBA |
+| Fully transparent pixels over every frame | **74.4734375%–84.49375%** |
 | Alpha / palette / disposal | Binary alpha, one shared palette, transparent index 0, disposal 2 |
 | Decoded comparison | All 100 frames exactly match intended alpha and visible RGB |
 | Represented commits, in report order | JAVA 7 / C++ 20 / PYTHON 6 / RUST 4 / JS 5 / TS 2 |
 | Large/small container counts, in report order | 1/3, 5/0, 1/2, 1/0, 1/1, 0/2 |
 
 The solid ray intentionally occupies otherwise empty pixels while sweeping,
-reducing the demo's minimum transparency to about 74.30% with the watermark
+reducing the demo's minimum transparency to about 74.47% with the watermark
 enabled. Tests continue to require at least 80% transparency for the fleet with
 the ray disabled. With the
 ray enabled, exact binary alpha, palette colors and decoded cleanup remain
@@ -211,6 +255,14 @@ the grouped cargo's large containers.
 Delivered art: `examples/demo/git-ship.gif`, `git-ship.png`, `report.json`,
 `contact-sheet.png`, `preview.html`, `examples/reduced-motion.html`, and
 `artwork/sprite-atlas.png`. Editable sources are documented in `artwork/README.md`.
+
+Huge demo: `examples/huge-demo/`, using seed `huge-demo`, the same month fixture,
+and the new watermark wording. It exports **800×320**, **100 frames at 10 fps**,
+**10 seconds**, **932,101 GIF bytes** and **6,104 PNG bytes**. Transparency ranges
+from **63.321875% to 76.6515625%** across the loop. Its larger ship has its own
+transparency checks; the standard fleet's 80% ray-off check remains unchanged.
+The 44-commit total is represented by seven six-commit containers and two small
+ones, with no overflow. Both modes' regenerated contact sheets were inspected.
 
 The approved reference, still compositions and light/dark contact sheets were
 inspected during implementation. The initial animation and smoke/wake revision were

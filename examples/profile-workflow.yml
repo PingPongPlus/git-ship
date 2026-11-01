@@ -42,6 +42,7 @@ jobs:
           data-window: ${{ inputs.period || vars.GIT_SHIP_DATA_WINDOW || 'month' }}
           # lighthouse-beam: 'false' # Optional: disable the rotating ray.
           # watermark: 'false' # Optional: hide the Git Ship and data-period label.
+          # huge-cargo-ship: 'true' # Optional: one heavy ship for all commits (six per large cargo).
           # config: .github/git-ship.toml
       - name: Publish only images to output branch
         env:

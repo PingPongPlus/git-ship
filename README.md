@@ -7,6 +7,17 @@ Turn your public GitHub commits into an animated fleet for your profile README. 
   <img src="examples/demo/git-ship.gif" width="800" alt="Pixel ships carrying commit cargo beside a lighthouse.">
 </picture>
 
+## Huge Cargo Ship (optional)
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="examples/huge-demo/git-ship.png">
+  <img src="examples/huge-demo/git-ship.gif" width="800" alt="One heavy cargo ship with calm rolling water and combined commit cargo.">
+</picture>
+
+One heavy ship combines all qualifying commits. **Large container = 6 commits; small = 1.** The hull shows the exact total, plus overflow when full.
+
+Enable it with `huge-cargo-ship: 'true'` under the workflow's **Generate fleet → with:** section.
+
 ## Set up in 4 steps
 
 1. Open or create your **public profile repository**: `YOUR_USERNAME/YOUR_USERNAME`.
@@ -36,7 +47,7 @@ That's it. Your fleet updates **daily** using the **past month** of data by defa
 | Hide the light beam | Add `lighthouse-beam: 'false'` under the **Generate fleet** step's `with:` section. |
 | Hide the watermark | Add `watermark: 'false'` in the same place. |
 
-## Reading your fleet
+## Reading the standard fleet
 
 Only languages you committed to appear, with up to **6 ships** in fresh random locations and ship types on each run.
 

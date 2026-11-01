@@ -1,0 +1,33 @@
+{
+  "width": 800,
+  "height": 320,
+  "frames": 100,
+  "fps": 10,
+  "duration_seconds": 10.0,
+  "gif_bytes": 932101,
+  "min_transparent_fraction": 0.63321875,
+  "max_transparent_fraction": 0.766515625,
+  "decoded_frames_match": true,
+  "activity_window_days": 30,
+  "mode": "huge-cargo-ship",
+  "huge_cargo_ship": true,
+  "commits_per_large_container": 6,
+  "layout_seed": "huge-demo",
+  "lighthouse_beam": true,
+  "watermark": true,
+  "watermark_text": "Git Ship \u2014 commits from the past month",
+  "png_bytes": 6104,
+  "languages": [],
+  "total_commits": 44,
+  "large_containers": 7,
+  "small_containers": 2,
+  "displayed_large_containers": 7,
+  "displayed_small_containers": 2,
+  "overflow_commits": 0,
+  "huge_ship": {
+    "x": 81,
+    "y": 37,
+    "width": 300,
+    "height": 110
+  }
+}

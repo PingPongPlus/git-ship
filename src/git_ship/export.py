@@ -14,6 +14,7 @@ from PIL import GifImagePlugin, Image, ImageChops
 
 from .animation import Animator
 from .config import Config
+from .huge_ship import COMMITS_PER_LARGE, HUGE_HEIGHT, HUGE_WIDTH, huge_cargo_counts
 from .layout import Scene
 from .sprites import CARGO_GROUP_SIZE, cargo_groups
 from .watermark import watermark_label
@@ -108,7 +109,11 @@ def export(
             stream.write(b";")
         report = verify_gif(gif_path, frames, config)
         report["activity_window_days"] = config.activity_window
-        report["commits_per_large_container"] = CARGO_GROUP_SIZE
+        report["mode"] = "huge-cargo-ship" if config.huge_cargo_ship else "fleet"
+        report["huge_cargo_ship"] = config.huge_cargo_ship
+        report["commits_per_large_container"] = (
+            COMMITS_PER_LARGE if config.huge_cargo_ship else CARGO_GROUP_SIZE
+        )
         report["layout_seed"] = scene.layout_seed
         report["lighthouse_beam"] = config.lighthouse_beam
         report["watermark"] = config.watermark
@@ -133,6 +138,24 @@ def export(
             }
             for s in scene.ships
         ]
+        if config.huge_cargo_ship:
+            counts = huge_cargo_counts(scene.total_commits)
+            report["total_commits"] = counts["total"]
+            report["large_containers"] = counts["large"]
+            report["small_containers"] = counts["small"]
+            report["displayed_large_containers"] = counts["visible_large"]
+            report["displayed_small_containers"] = counts["visible_small"]
+            report["overflow_commits"] = counts["overflow_commits"]
+            report["huge_ship"] = (
+                {
+                    "x": scene.huge_ship.x,
+                    "y": scene.huge_ship.y,
+                    "width": HUGE_WIDTH,
+                    "height": HUGE_HEIGHT,
+                }
+                if scene.huge_ship
+                else None
+            )
         (root / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         for name in ("git-ship.gif", "git-ship.png", "report.json"):
             os.replace(root / name, output_dir / name)

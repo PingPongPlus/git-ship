@@ -8,7 +8,7 @@ import secrets
 from dataclasses import dataclass
 
 from .config import HEIGHT, WIDTH, Config
-from .model import Language, Profile, global_activity, rank_languages
+from .model import Language, Profile, aggregate_commits, global_activity, rank_languages
 from .sprites import SHIP_DESIGNS, Style, language_style, stable_seed
 from .watermark import WATERMARK_HEIGHT
 
@@ -26,11 +26,21 @@ class Ship:
 
 
 @dataclass(frozen=True)
+class HugeShip:
+    total_commits: int
+    x: int
+    y: int
+    phase: float
+
+
+@dataclass(frozen=True)
 class Scene:
     username: str
     ships: tuple[Ship, ...]
     energy: float
     layout_seed: str = ""
+    huge_ship: HugeShip | None = None
+    total_commits: int | None = None
 
 
 def placements(widths: list[int], rng: random.Random, top_margin: int = 0) -> list[tuple[int, int]]:
@@ -85,15 +95,33 @@ def placements(widths: list[int], rng: random.Random, top_margin: int = 0) -> li
 
 
 def layout(profile: Profile, config: Config) -> Scene:
+    energy = global_activity(profile)
+    layout_seed = str(config.seed) if config.seed is not None else secrets.token_hex(16)
+    rng = random.Random(stable_seed(layout_seed))
+    identity = profile.username.casefold()
+    if config.huge_cargo_ship:
+        total = aggregate_commits(profile, config)
+        vessel = (
+            HugeShip(
+                total,
+                rng.randint(80, 88),
+                rng.randint(31, 37),
+                stable_seed(f"{identity}:huge") % 1024 / 1024,
+            )
+            if total
+            else None
+        )
+        return Scene(profile.username, (), energy, layout_seed, vessel, total)
+    if profile.commit_coverage == "complete-metadata":
+        raise ValueError(
+            "cached profile contains aggregate-only data; fetch a fresh profile "
+            "without --huge-cargo-ship to render language ships"
+        )
     # Filter before limiting: an inactive high-byte language must never hide an
     # active language farther down the ranking. Unknown commit data is hidden.
     languages = tuple(
         language for language in rank_languages(profile, config) if (language.cargo or 0) > 0
     )[: config.ships]
-    energy = global_activity(profile)
-    layout_seed = str(config.seed) if config.seed is not None else secrets.token_hex(16)
-    rng = random.Random(stable_seed(layout_seed))
-    identity = profile.username.casefold()
     widths = [min(round(44 + 16 * math.sqrt(language.share)), 62) for language in languages]
     positions = placements(widths, rng, WATERMARK_HEIGHT if config.watermark else 0)
     # Each shuffled bag uses every approved design before repeating. Ship shapes

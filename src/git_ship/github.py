@@ -20,6 +20,7 @@ from .model import (
     Commit,
     Profile,
     Repository,
+    commit_filter_signature,
     commit_window,
     parse_timestamp,
     rank_languages,
@@ -77,6 +78,13 @@ class GitHubClient:
                     raise GitHubError(
                         "GitHub rejected GITHUB_TOKEN (401); check or unset it"
                     ) from None
+                if (
+                    exc.code == 409
+                    and body is None
+                    and parsed.path.endswith("/commits")
+                    and "git repository is empty" in detail
+                ):
+                    return [], {}
                 if exc.code in (403, 429) and (
                     exc.headers.get("X-RateLimit-Remaining") == "0"
                     or exc.code == 429
@@ -174,9 +182,54 @@ class GitHubClient:
             path = self.next_page(headers)
         return tuple(sorted(languages))
 
+    @staticmethod
+    def authored_commit(
+        item: dict[str, Any], username: str, start: datetime, end: datetime
+    ) -> Commit | None:
+        """Validate metadata and resolve authors locally, including old noreply names."""
+        try:
+            author = item["author"]
+            if (
+                not isinstance(author, dict)
+                or author.get("login", "").casefold() != username.casefold()
+            ):
+                return None
+            timestamp = item["commit"]["committer"]["date"]
+            if not start < parse_timestamp(timestamp) <= end:
+                return None
+            return Commit.from_dict(
+                {"sha": item["sha"], "author": username, "committed_at": timestamp, "languages": []}
+            )
+        except (KeyError, TypeError, AttributeError, ValueError):
+            raise GitHubError("unexpected GitHub commit metadata") from None
+
+    def load_aggregate_commits(
+        self, profile: Profile, config: Config, observed: datetime
+    ) -> tuple[Repository, ...]:
+        """Read complete authored metadata for every selected repository, including docs."""
+        start, end = commit_window(observed, config.activity_window)
+        query = urlencode({"since": start.isoformat(), "until": end.isoformat(), "per_page": 100})
+        repositories = list(profile.repositories)
+        for index, repo in enumerate(repositories):
+            if not selected(repo, profile.username, config):
+                continue
+            base = f"/repos/{quote(repo.owner, safe='')}/{quote(repo.name, safe='')}"
+            records = []
+            seen = set()
+            for page in self.iter_pages(f"{base}/commits?{query}", kind="commit"):
+                for item in page:
+                    commit = self.authored_commit(item, profile.username, start, end)
+                    if commit is not None and commit.sha not in seen:
+                        records.append(commit)
+                        seen.add(commit.sha)
+            repositories[index] = replace(repo, commits=tuple(records))
+        return tuple(repositories)
+
     def load_cargo(
         self, profile: Profile, config: Config, observed: datetime
     ) -> tuple[Repository, ...]:
+        if config.huge_cargo_ship:
+            return self.load_aggregate_commits(profile, config, observed)
         if config.ships == 0:
             return profile.repositories
         # Quiet high-byte languages cannot consume the visible-ship limit.
@@ -211,34 +264,15 @@ class GitHubClient:
             seen: set[str] = set()
             for page in self.iter_pages(f"{base}/commits?{query}", kind="commit"):
                 for item in page:
-                    try:
-                        author = item["author"]
-                        if (
-                            not isinstance(author, dict)
-                            or author.get("login", "").casefold() != profile.username.casefold()
-                        ):
-                            continue
-                        sha = item["sha"]
-                        timestamp = item["commit"]["committer"]["date"]
-                        if not start < parse_timestamp(timestamp) <= end or sha in seen:
-                            continue
-                        # Validate an API SHA before using it in a request path.
-                        Commit.from_dict(
-                            {
-                                "sha": sha,
-                                "author": profile.username,
-                                "committed_at": timestamp,
-                                "languages": [],
-                            }
-                        )
-                        seen.add(sha)
-                    except (KeyError, TypeError, AttributeError, ValueError):
-                        raise GitHubError("unexpected GitHub commit metadata") from None
-                    languages = self.changed_languages(base, sha, repo.languages)
-                    records.append(Commit(sha, profile.username, timestamp, languages))
+                    commit = self.authored_commit(item, profile.username, start, end)
+                    if commit is None or commit.sha in seen:
+                        continue
+                    seen.add(commit.sha)
+                    languages = self.changed_languages(base, commit.sha, repo.languages)
+                    records.append(replace(commit, languages=languages))
                     for name in languages:
                         if name in shas:
-                            shas[name].add(sha)
+                            shas[name].add(commit.sha)
                     if all(
                         len(shas[name]) >= CARGO_LIMIT
                         for name in targets
@@ -320,7 +354,9 @@ class GitHubClient:
                 if not selected(repo, username, config):
                     continue
                 owner, name = quote(repo.owner, safe=""), quote(repo.name, safe="")
-                languages, _ = self.request(f"/repos/{owner}/{name}/languages")
+                languages = {}
+                if not config.huge_cargo_ship:
+                    languages, _ = self.request(f"/repos/{owner}/{name}/languages")
                 repos.append(
                     Repository(
                         repo.name, repo.owner, repo.fork, repo.archived, repo.pushed_at, languages
@@ -339,11 +375,15 @@ class GitHubClient:
         # Validate the same contract as offline fixtures before rendering.
         return Profile.from_dict(
             {
-                "schema_version": 2,
+                "schema_version": 3,
                 "username": username,
                 "observed_on": str(observed.date()),
                 "observed_at": observed.isoformat(),
                 "cargo_window": config.activity_window,
+                "commit_coverage": (
+                    "complete-metadata" if config.huge_cargo_ship else "sampled-language"
+                ),
+                "commit_filters": commit_filter_signature(config),
                 "repositories": [asdict(r) for r in repos],
                 "contributions": total,
                 "warnings": self.warnings,

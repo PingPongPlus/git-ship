@@ -34,6 +34,11 @@ def run() -> int:
             if watermark not in ("true", "false"):
                 raise ValueError("watermark must be true or false")
             args.append("--watermark" if watermark == "true" else "--no-watermark")
+        huge = os.environ.get("SHIP_HUGE_CARGO_SHIP", "").strip().lower()
+        if huge:
+            if huge not in ("true", "false"):
+                raise ValueError("huge-cargo-ship must be true or false")
+            args.append("--huge-cargo-ship" if huge == "true" else "--no-huge-cargo-ship")
         data_window = os.environ.get("SHIP_DATA_WINDOW", "").strip().lower()
         if data_window:
             if data_window not in DATA_WINDOWS:

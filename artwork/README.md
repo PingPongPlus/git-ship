@@ -1,6 +1,7 @@
 The original editable artwork lives in the installed package:
 
 - `src/git_ship/sprites.py`: lighthouse, rocks, seven ship designs, commit cargo, palette and art primitives.
+- `src/git_ship/huge_ship.py`: separately approved 300×110 heavy cargo ship, six-commit cargo, exact/overflow counters and calm displacement water.
 - `src/git_ship/font.py`: original 5×7 bitmap glyphs, including `+`, `#`, spaces and hyphens.
 - `src/git_ship/assets/languages.json`: language colors and abbreviations; rendered ship type is assigned separately.
 - `src/git_ship/animation.py`: separate transient wakes, smoke, lantern states, rotating light ray and period watermark.
@@ -62,7 +63,7 @@ stays binary for exact GIF export; pixels outside the cone are unchanged. Set
 use `--no-lighthouse-beam` to disable it without changing the lantern blink.
 
 The optional top-left watermark uses gray lettering in the existing uppercase
-pixel font. It reads `GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE` for the month
+pixel font. It reads `GIT SHIP — COMMITS FROM THE PAST MONTH` for the month
 preset and substitutes the selected day/week/month/year period or custom number
 of days. A 14-pixel header reserves space above the ships. It is drawn after the
 ray so the lettering keeps its own color. Set `watermark = false` in TOML,

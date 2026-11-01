@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from PIL import Image, ImageDraw
 
 from .config import HEIGHT, WIDTH, Config
+from .huge_ship import draw_heavy_water, huge_cargo_counts, huge_ship_sprite
 from .layout import Scene, Ship
 from .sprites import (
     FOAM,
@@ -120,11 +121,28 @@ def lighthouse_beam(image: Image.Image, t: float) -> None:
 
 class Animator:
     def __init__(self, scene: Scene, config: Config) -> None:
+        if config.huge_cargo_ship != (scene.total_commits is not None):
+            raise ValueError("scene and render mode differ; rebuild the scene with layout()")
+        if config.huge_cargo_ship:
+            counts = huge_cargo_counts(scene.total_commits)
+            if (
+                scene.ships
+                or bool(counts["total"]) != (scene.huge_ship is not None)
+                or (
+                    scene.huge_ship is not None and scene.huge_ship.total_commits != counts["total"]
+                )
+            ):
+                raise ValueError("aggregate scene has inconsistent ship or commit data")
+        elif scene.huge_ship is not None:
+            raise ValueError("huge ship data requires huge-cargo-ship mode")
         self.scene, self.config = scene, config
         self.sprites = tuple(
             ship_sprite(s.style, s.width, s.language.cargo or 0) for s in scene.ships
         )
         self.lights = (lighthouse_sprite(False), lighthouse_sprite(True))
+        self.huge_sprite = (
+            huge_ship_sprite(scene.huge_ship.total_commits) if scene.huge_ship else None
+        )
 
     def frame(self, t: float) -> Image.Image:
         """t is loop phase in [0, 1); frame(0) == frame(1), no final hold."""
@@ -136,6 +154,15 @@ class Animator:
             p = (t * 2 + j * 0.5) % 1
             if 0.12 < p < 0.88:
                 wave(d, x + int(p * 2), y, 10 + int(3 * math.sin(math.pi * p)), int(p * 4) % 2)
+        if self.scene.huge_ship is not None:
+            vessel = self.scene.huge_ship
+            phase = (t + vessel.phase) % 1
+            x = vessel.x + round(math.sin(TAU * phase))
+            y = vessel.y + round(0.65 * math.sin(TAU * phase))
+            draw_heavy_water(d, x, y, phase)
+            assert self.huge_sprite is not None
+            image.alpha_composite(self.huge_sprite, (x, y))
+            draw_heavy_water(d, x, y, phase, foreground=True)
         for ship, sprite in zip(self.scene.ships, self.sprites, strict=True):
             m = ship_motion(ship, t)
             if ship.style.design == "trawler":

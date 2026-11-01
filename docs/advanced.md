@@ -116,6 +116,55 @@ For readers who prefer reduced motion, use a static fallback:
 
 Browsers that support the media query animate only with no reduced-motion preference. Other clients receive the PNG. The local [picture proof](../examples/reduced-motion.html) uses the same structure. GitHub sanitization, image caching and client behavior can change; a newly published profile embed still needs checking on GitHub. Use a direct PNG embed for an unconditional still. The local preview includes a pause button; a standalone README GIF does not.
 
+## Huge Cargo Ship
+
+Enable this optional mode in the generation step:
+
+```yaml
+huge-cargo-ship: 'true'
+```
+
+It replaces the language fleet with one heavy ship carrying the **exact combined
+number of unique authored commits** in the selected period. It includes
+documentation-only commits and repositories without language bytes. A commit
+touching several languages, or shared between repositories, is counted once.
+Public, owned repositories and the configured fork/archive/include/exclude filters
+still define the data scope; default-branch history and linked author identity are
+used. The standard fleet's per-language 20-commit cap does not apply here.
+
+Each large container represents **six commits**. Up to five leftover commits use
+small containers, one commit each. The deck holds 30 large containers; when more
+are needed, the hull retains the exact total and a **`+N` overflow count** shows
+the remaining commits. Container weights never change to hide overflow. With no
+qualifying commits, only the lighthouse and enabled decorations remain.
+
+The approved 300×110-pixel hull sits low against its red waterline. A calm,
+irregular displacement wake and low bow curl roll once per animation loop, with
+small mooring motion and no airborne spray. The lighthouse beam and watermark
+remain independently configurable. This ship is separate from the standard
+random design pool.
+
+```sh
+git-ship render --username YOUR_USERNAME --huge-cargo-ship --data-window month --output-dir out/huge
+git-ship render --demo --huge-cargo-ship --seed huge-demo --preview --output-dir examples/huge-demo
+```
+
+Use `huge_cargo_ship = true` in TOML, or `--no-huge-cargo-ship` to override it off.
+The mode defaults to off. Its separate [demo](../examples/huge-demo/preview.html)
+shows 44 fixture commits as seven large containers and two small containers.
+
+Huge mode fetches complete commit metadata without language or file-detail calls.
+Schema-3 caches record coverage, observation time, window and repository filters.
+Sampled fleet caches and schema-1/2 caches cannot establish an exact aggregate
+total: fetch a fresh profile with `--huge-cargo-ship`. Keep that flag when
+rendering its metadata-only cache; a language fleet needs a fresh classified
+profile. Changed observation/window/filters also require refetching. Explicit
+complete classified fixtures can support both modes.
+
+The huge report uses `mode: "huge-cargo-ship"`, `total_commits`, total and displayed
+large/small container counts, `overflow_commits`, and
+`commits_per_large_container: 6`. `languages` is empty because this vessel represents the combined total.
+
 ## Action interface and publishing
 
 | Input | Default / meaning |
@@ -124,6 +173,7 @@ Browsers that support the media query animate only with no reduced-motion prefer
 | `data-window` | `day`, `week`, `month`, or `year`; empty uses TOML `activity_window`, then 30 days |
 | `lighthouse-beam` | `true` or `false`; empty uses TOML `lighthouse_beam`, enabled by default |
 | `watermark` | `true` or `false`; empty uses TOML `watermark`, enabled by default |
+| `huge-cargo-ship` | `true` or `false`; empty uses TOML `huge_cargo_ship`, disabled by default |
 | `output-dir` | `git-ship-output`, a subdirectory inside the caller workspace |
 | `config` | Optional TOML path inside the caller workspace |
 | `token` | Built-in `${{ github.token }}`, supplied as `GITHUB_TOKEN` internally |
@@ -138,6 +188,9 @@ Use the built-in `GITHUB_TOKEN`. It belongs to the **caller repository**, not to
 Output commits use `github-actions[bot]` and are not attributed as your authored commits. Cargo reads default-branch history, so output-branch image commits do not load your ships. Publication can still update repository-level `pushed_at`; if your profile repository contains measurable code, exclude it to avoid feedback into that movement proxy.
 
 ## What each container means
+
+This section describes the standard language fleet. Huge Cargo Ship uses the
+aggregate counting and six-commit containers described above.
 
 Git Ship uses [official repository and commit APIs](https://docs.github.com/en/rest/commits/commits):
 
@@ -194,7 +247,7 @@ Open `out/preview.html` directly or serve it with `python -m http.server 8000` a
 
 The report keeps each language's `cargo` as its displayed commit count, with `large_containers` and `small_containers` describing the drawing. The top-level `commits_per_large_container` is `4`.
 
-Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/authors/timestamps/language assignments, the observation instant and cargo window; never credentials or patches. Schema-1 caches remain readable but cannot establish active ships. Since live scans can stop at the 20-commit cap, refetch when changing a cached data window, observation date, repository filters, or visible fleet. Ships with unknown activity are omitted with a warning. A fixed observation date freezes calculation time at that date's end in UTC, not GitHub history: cache a profile and provide `--seed` for fully repeatable historical rendering.
+Normalized schema-3 profiles record commit coverage and repository filters alongside public repository data, commit SHAs/authors/timestamps, the observation instant and cargo window; never credentials or patches. Schema-1/2 caches remain readable for the standard fleet but cannot establish complete aggregate totals. Since standard scans can stop at the 20-commit cap, refetch when changing a cached data window, observation date, repository filters, or visible fleet. Ships with unknown activity are omitted with a warning. A fixed observation date freezes calculation time at that date's end in UTC, not GitHub history: cache a profile and provide `--seed` for fully repeatable historical rendering.
 
 ## Customize
 
@@ -211,6 +264,7 @@ Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/au
 | `seed` | fresh random value | Optional string/integer to reproduce positions and ship types; omit for a fresh fleet on each run |
 | `lighthouse_beam` | true | Rotating lighthouse ray; set false to disable |
 | `watermark` | true | Top-left Git Ship and data-period label; set false to disable |
+| `huge_cargo_ship` | false | One aggregate ship with six-commit large containers; replaces the standard fleet |
 | `observation_date` | current instant live | ISO/TOML date; override uses end of that UTC date; offline uses its fixture instant/date |
 | `include_forks` | false | Include owned public forks when explicitly enabled |
 | `include_archived` | true | Archived code contributes by default |
@@ -221,7 +275,7 @@ Cached normalized schema-2 profiles contain public bytes, sampled commit SHAs/au
 
 To disable the ray, add `lighthouse-beam: 'false'` under the action's `with:` block, set `lighthouse_beam = false` in TOML, or pass `--no-lighthouse-beam` to the CLI. Use `--lighthouse-beam` to enable it explicitly. The setting does not change cargo counts or ship placement.
 
-The watermark reads **`GIT-SHIP PAST MONTH COMMIT & SHIPPED CODE`** for the month preset. It follows the selected day, week, month or year window; a custom window uses its number of days. It uses the project's uppercase pixel font and gray lettering at the top left. To hide it, set the action input `watermark: 'false'`, use `watermark = false` in TOML, or pass `--no-watermark`. `--watermark` enables it explicitly. This display setting does not change commit counts.
+The watermark reads **`GIT SHIP — COMMITS FROM THE PAST MONTH`** for the month preset. It follows the selected day, week, month or year window; a custom window uses its number of days. It uses the project's uppercase pixel font and gray lettering at the top left. To hide it, set the action input `watermark: 'false'`, use `watermark = false` in TOML, or pass `--no-watermark`. `--watermark` enables it explicitly. This display setting does not change commit counts.
 
 Abbreviations include JS, TS, IPYNB, and OBJ-C. Unknown names use an uppercase ASCII approximation truncated to six characters; configure labels to avoid collisions. Full language names remain in the report. Unknown languages receive deterministic color variants and participate in the same shuffled ship-type pool. An inactive window keeps the lighthouse, its optional ray and localized ripples, with no idle ships. Total export workload is capped at **80 million frame-pixels** before allocation; not every otherwise-valid scale/fps/duration combination fits. RGBA, indexed and verification frames make peak memory several times the pixel count.
 

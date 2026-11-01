@@ -13,6 +13,17 @@ from typing import Any
 from .config import Config
 
 CARGO_LIMIT = 20
+COMMIT_COVERAGE = {"sampled-language", "complete-metadata", "complete-language"}
+
+
+def commit_filter_signature(config: Config) -> dict[str, Any]:
+    """Store the repository selection used to establish complete live coverage."""
+    return {
+        "include_forks": config.include_forks,
+        "include_archived": config.include_archived,
+        "include": list(config.include),
+        "exclude": list(config.exclude),
+    }
 
 
 @dataclass(frozen=True)
@@ -59,11 +70,14 @@ class Profile:
     warnings: tuple[str, ...] = ()
     observed_at: str | None = None
     cargo_window: int | None = None
+    commit_coverage: str = "sampled-language"
+    commit_filters: dict[str, Any] | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Profile:
-        if data.get("schema_version") not in (1, 2):
-            raise ValueError("unsupported profile schema; expected schema_version = 1 or 2")
+        schema = data.get("schema_version")
+        if schema not in (1, 2, 3):
+            raise ValueError("unsupported profile schema; expected schema_version = 1, 2 or 3")
         config = Config(username=data["username"])
         observed = date.fromisoformat(data["observed_on"])
         repos = []
@@ -109,8 +123,50 @@ class Profile:
             type(cargo_window) is not int or not 1 <= cargo_window <= 365
         ):
             raise ValueError("cargo_window must be null or an integer in 1..365")
+        # Old caches may contain only a capped or selected language sample.
+        # Never infer full commit history from a non-null commits array.
+        coverage = (
+            data.get("commit_coverage", "sampled-language") if schema == 3 else "sampled-language"
+        )
+        if not isinstance(coverage, str) or coverage not in COMMIT_COVERAGE:
+            raise ValueError("commit_coverage must identify sampled or complete commit data")
+        filters = data.get("commit_filters") if schema == 3 else None
+        if filters is not None:
+            if (
+                not isinstance(filters, dict)
+                or filters.keys() != {"include_forks", "include_archived", "include", "exclude"}
+                or any(
+                    type(filters[name]) is not bool
+                    for name in ("include_forks", "include_archived")
+                )
+                or any(
+                    not isinstance(filters[name], (list, tuple))
+                    or not all(isinstance(pattern, str) for pattern in filters[name])
+                    for name in ("include", "exclude")
+                )
+            ):
+                raise ValueError("commit_filters must contain the repository selection signature")
+            filters = {
+                **filters,
+                "include": list(filters["include"]),
+                "exclude": list(filters["exclude"]),
+            }
+        full_fixture = coverage == "complete-language" and cargo_window is None and filters is None
+        if coverage != "sampled-language" and not full_fixture:
+            if cargo_window is None or instant is None or filters is None:
+                raise ValueError(
+                    "complete live commit data requires its window, instant and filters"
+                )
         return cls(
-            config.username, observed, tuple(repos), total, tuple(warnings), instant, cargo_window
+            config.username,
+            observed,
+            tuple(repos),
+            total,
+            tuple(warnings),
+            instant,
+            cargo_window,
+            coverage,
+            filters,
         )
 
     @classmethod
@@ -122,7 +178,7 @@ class Profile:
 
     def write(self, path: Path) -> None:
         data = asdict(self)
-        data["schema_version"] = 2
+        data["schema_version"] = 3
         data["observed_on"] = self.observed_on.isoformat()
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -172,6 +228,49 @@ def commit_window(observed: datetime, days: int) -> tuple[datetime, datetime]:
     return observed - timedelta(days=days), observed
 
 
+def aggregate_commits(profile: Profile, config: Config) -> int:
+    """Count all distinct qualifying authored SHAs, without language or visual caps."""
+    if config.username and config.username.casefold() != profile.username.casefold():
+        raise ValueError("aggregate profile username differs; fetch a fresh profile")
+    if profile.commit_coverage not in ("complete-metadata", "complete-language"):
+        raise ValueError(
+            "aggregate commits require complete history; fetch a fresh aggregate profile"
+        )
+    observed = observation_time(profile, config)
+    full_fixture = (
+        profile.commit_coverage == "complete-language"
+        and profile.cargo_window is None
+        and profile.commit_filters is None
+    )
+    if not full_fixture:
+        if (
+            profile.observed_at is None
+            or profile.cargo_window != config.activity_window
+            or observed != parse_timestamp(profile.observed_at)
+            or profile.commit_filters != commit_filter_signature(config)
+        ):
+            raise ValueError(
+                "aggregate cache window, observation or filters differ; "
+                "fetch a fresh aggregate profile"
+            )
+    start, end = commit_window(observed, config.activity_window)
+    shas = set()
+    for repo in profile.repositories:
+        if not selected(repo, profile.username, config):
+            continue
+        if repo.commits is None:
+            raise ValueError(
+                "aggregate commit history is incomplete; fetch a fresh aggregate profile"
+            )
+        for commit in repo.commits:
+            if (
+                commit.author.casefold() == profile.username.casefold()
+                and start < parse_timestamp(commit.committed_at) <= end
+            ):
+                shas.add(commit.sha)
+    return len(shas)
+
+
 def rank_languages(profile: Profile, config: Config) -> tuple[Language, ...]:
     counts: dict[str, int] = {}
     recent: dict[str, float] = {}
@@ -212,8 +311,10 @@ def rank_languages(profile: Profile, config: Config) -> tuple[Language, ...]:
     cargo: dict[str, int | None] = {
         name: min(CARGO_LIMIT, len(commit_shas.get(name, ()))) for name in counts
     }
-    for name in missing_commits:
-        if len(commit_shas.get(name, ())) < CARGO_LIMIT:
+    for name in counts:
+        if profile.commit_coverage == "complete-metadata" or (
+            name in missing_commits and len(commit_shas.get(name, ())) < CARGO_LIMIT
+        ):
             cargo[name] = None
     return tuple(
         Language(
