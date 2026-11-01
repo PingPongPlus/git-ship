@@ -40,6 +40,11 @@ def run() -> int:
                 raise ValueError("huge-cargo-ship must be true or false")
             args.append("--huge-cargo-ship" if huge == "true" else "--no-huge-cargo-ship")
         commits = os.environ.get("SHIP_DISPLAY_COMMITS", "").strip().lower()
+        endless = os.environ.get("SHIP_ENDLESS_CARGO", "").strip().lower()
+        if endless:
+            if endless not in ("true", "false"):
+                raise ValueError("endless-cargo must be true or false")
+            args.append("--endless-cargo" if endless == "true" else "--no-endless-cargo")
         if commits:
             if commits not in ("true", "false"):
                 raise ValueError("display-commits must be true or false")

@@ -17,6 +17,17 @@ DATA_WINDOWS = {"day": 1, "week": 7, "month": 30, "year": 365}
 MAX_SHIPS = 6
 
 
+def validate_render_size(width: int, height: int, scale: int, frames: int) -> None:
+    """Check the actual canvas before allocating sprites, frames or cargo plans."""
+    if max(width, height) * scale > 65535:
+        raise ValueError("canvas exceeds GIF dimensions; reduce cargo or scale")
+    if width * height * scale**2 * frames > 80_000_000:
+        raise ValueError(
+            "export exceeds 80 million frame-pixels; reduce scale, duration or fps, "
+            "or shorten the data window for endless cargo"
+        )
+
+
 @dataclass(frozen=True)
 class Config:
     username: str = ""
@@ -29,6 +40,7 @@ class Config:
     lighthouse_beam: bool = True
     watermark: bool = True
     huge_cargo_ship: bool = False
+    endless_cargo: bool = False
     cargo_logos: bool = False
     display_commits: bool = False
     rain: bool = False
@@ -60,16 +72,14 @@ class Config:
         if self.duration * self.fps > 300:
             raise ValueError("export is limited to 300 frames; reduce duration or fps")
         # RGBA input, paletted output and decoding have separate allocations.
-        if WIDTH * HEIGHT * self.scale**2 * self.duration * self.fps > 80_000_000:
-            raise ValueError(
-                "export exceeds 80 million frame-pixels; reduce scale, duration or fps"
-            )
+        validate_render_size(WIDTH, HEIGHT, self.scale, self.duration * self.fps)
         for name in (
             "include_forks",
             "include_archived",
             "lighthouse_beam",
             "watermark",
             "huge_cargo_ship",
+            "endless_cargo",
             "cargo_logos",
             "display_commits",
             "rain",

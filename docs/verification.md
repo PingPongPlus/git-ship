@@ -373,3 +373,20 @@ sdist and wheel built successfully. The additional export regression renders
 all ten styles together with rain and the lighthouse beam, verifies every
 decoded GIF frame, exact commit totals and the loop seam. The approved preview
 also passed a 100-frame, 10-second decoded GIF audit.
+
+## Optional endless huge cargo
+
+`endless_cargo` defaults to false and applies only to the huge ship. It removes
+the 30-large-container cap, keeps exact six-commit groups and one-commit
+remainders, and grows the canvas upward in complete ten-pixel tiers. Language
+weights, mixed containers and authored counters remain exact. Ocean effects and
+the lighthouse move together below the taller stacks while the watermark stays
+at the top. Both plain and logo cargo are covered.
+
+Local checks: **453 tests passed in 11.67s**. New checks cover counts across the
+old cap, complete language weights, visible upper cargo, rain impact exclusion,
+translated lighthouse/sea geometry, exact GIF decoding and loop closure,
+CLI/TOML/action precedence, disabled/fleet behavior, and allocation guards that
+preserve previous assets. Twenty capped plain/logo sprite scenarios were
+pixel-identical to `main`. A 600-commit preview rendered all 100 containers in
+17 tiers at 800×560, with 100 decoded-matching frames and zero overflow.

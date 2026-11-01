@@ -8,6 +8,7 @@ from collections import Counter
 from PIL import Image, ImageDraw
 
 from .cargo_art import STYLES, container
+from .config import validate_render_size
 from .font import paint_text, text_width
 from .sprites import CREAM, FOAM, GOLD, INK, SHADE, WAVE, WAVE_DEEP
 
@@ -25,12 +26,14 @@ WATERLINE = "#a34e44"
 CONTAINERS = ("#b55250", "#dfbe62", "#39799c", "#287477", "#c9bea6", "#d9825b")
 
 
-def huge_cargo_counts(total_commits: int) -> dict[str, int]:
+def huge_cargo_counts(total_commits: int, *, endless_cargo: bool = False) -> dict[str, int]:
     """Exact commit weights, visible boxes and commits beyond the large-box bay."""
     if type(total_commits) is not int or not 0 <= total_commits <= MAX_TOTAL_COMMITS:
         raise ValueError(f"total_commits must be an integer in 0..{MAX_TOTAL_COMMITS}")
     large, small = divmod(total_commits, COMMITS_PER_LARGE)
-    visible_large = min(large, MAX_LARGE_CONTAINERS)
+    if type(endless_cargo) is not bool:
+        raise ValueError("endless_cargo must be true or false")
+    visible_large = large if endless_cargo else min(large, MAX_LARGE_CONTAINERS)
     return {
         "total": total_commits,
         "large": large,
@@ -41,9 +44,24 @@ def huge_cargo_counts(total_commits: int) -> dict[str, int]:
     }
 
 
-def language_cargo_plan(total_commits: int, language_counts: tuple[tuple[str, int], ...]) -> dict:
+def cargo_stack_offset(total_commits: int, *, endless_cargo: bool = False) -> int:
+    """Add ten native pixels of sky for each tier beyond the original five."""
+    counts = huge_cargo_counts(total_commits, endless_cargo=endless_cargo)
+    tiers = (counts["visible_large"] + 5) // 6
+    return max(0, tiers - 5) * 10
+
+
+def language_cargo_plan(
+    total_commits: int,
+    language_counts: tuple[tuple[str, int], ...],
+    *,
+    endless_cargo: bool = False,
+) -> dict:
     """Pack full single-language boxes, then mixed leftovers, without losing weight."""
-    counts = huge_cargo_counts(total_commits)
+    counts = huge_cargo_counts(total_commits, endless_cargo=endless_cargo)
+    extra = cargo_stack_offset(total_commits, endless_cargo=endless_cargo)
+    validate_render_size(HUGE_WIDTH, HUGE_HEIGHT + extra, 1, 10)
+    capacity = counts["visible_large"]
     if (
         any(
             not isinstance(name, str) or not name or type(n) is not int or n < 0
@@ -66,12 +84,12 @@ def language_cargo_plan(total_commits: int, language_counts: tuple[tuple[str, in
         }
 
     for name, n in ordered:
-        for _ in range(min(n // COMMITS_PER_LARGE, MAX_LARGE_CONTAINERS - len(large))):
+        for _ in range(min(n // COMMITS_PER_LARGE, capacity - len(large))):
             large.append(box([name] * COMMITS_PER_LARGE))
         leftovers.extend([name] * (n % COMMITS_PER_LARGE))
     full_end = len(leftovers) // COMMITS_PER_LARGE * COMMITS_PER_LARGE
     for start in range(0, full_end, COMMITS_PER_LARGE):
-        if len(large) == MAX_LARGE_CONTAINERS:
+        if len(large) == capacity:
             break
         large.append(box(leftovers[start : start + COMMITS_PER_LARGE]))
     small = [box([name]) for name in leftovers[full_end:]]
@@ -85,16 +103,21 @@ def huge_ship_sprite(
     language_counts: tuple[tuple[str, int], ...] | None = None,
     *,
     counter_total: int | None = None,
+    endless_cargo: bool = False,
 ) -> Image.Image:
     """A wide low freighter, with one large container per six commits."""
-    counts = huge_cargo_counts(total_commits)
+    counts = huge_cargo_counts(total_commits, endless_cargo=endless_cargo)
+    extra = cargo_stack_offset(total_commits, endless_cargo=endless_cargo)
+    validate_render_size(HUGE_WIDTH, HUGE_HEIGHT + extra, 1, 10)
     counter = (
         counts["total"] if counter_total is None else huge_cargo_counts(counter_total)["total"]
     )
     if counter < total_commits:
         raise ValueError("the authored commit counter cannot be smaller than cargo")
     plan = (
-        language_cargo_plan(total_commits, language_counts) if language_counts is not None else None
+        language_cargo_plan(total_commits, language_counts, endless_cargo=endless_cargo)
+        if language_counts is not None
+        else None
     )
     image = Image.new("RGBA", (HUGE_WIDTH, HUGE_HEIGHT))
     d = ImageDraw.Draw(image)
@@ -137,7 +160,9 @@ def huge_ship_sprite(
     d.polygon([(10, 65), (15, 63), (18, 65), (16, 69), (11, 69), (9, 67)], fill="#d9825b")
     d.line((12, 64, 16, 65), fill=GOLD)
 
-    # Large ISO-like container panels. Six columns, up to five supported tiers.
+    # Cargo is behind the rail and hull. Extra sky keeps every upper tier visible.
+    cargo_image = Image.new("RGBA", (HUGE_WIDTH, HUGE_HEIGHT + extra))
+    cargo_draw = ImageDraw.Draw(cargo_image)
     cargo = counts["visible_large"]
     column_order = (2, 3, 1, 4, 0, 5)
 
@@ -153,15 +178,17 @@ def huge_ship_sprite(
 
     for index in range(cargo):
         column, tier = position(index)
-        x, y = 72 + column * 28, 66 - tier * 10
+        x, y = 72 + column * 28, 66 - tier * 10 + extra
         color = CONTAINERS[(column + tier * 2) % len(CONTAINERS)]
-        rect((x, y, x + 26, y + 9), HULL_EDGE)
-        rect((x + 1, y + 1, x + 25, y + 8), color)
+        cargo_draw.rectangle((x, y, x + 26, y + 9), fill=HULL_EDGE)
+        cargo_draw.rectangle((x + 1, y + 1, x + 25, y + 8), fill=color)
         # Crisp ribs and a restrained highlight, all on the same logical grid.
         for rib in (5, 10, 15, 20):
-            rect((x + rib, y + 2, x + rib, y + 7), HULL_SHADE)
-        rect((x + 2, y + 1, x + 24, y + 1), SHADE if color == "#c9bea6" else color)
-        rect((x + 24, y + 3, x + 24, y + 6), CREAM)
+            cargo_draw.rectangle((x + rib, y + 2, x + rib, y + 7), fill=HULL_SHADE)
+        cargo_draw.rectangle(
+            (x + 2, y + 1, x + 24, y + 1), fill=SHADE if color == "#c9bea6" else color
+        )
+        cargo_draw.rectangle((x + 24, y + 3, x + 24, y + 6), fill=CREAM)
 
     # Fine deck rails and the smaller forward mast leave the cargo unobstructed.
     rect((6, 76, 261, 78), HULL_EDGE)
@@ -226,10 +253,12 @@ def huge_ship_sprite(
     paint_text(d, (26, 85), f"{counter} {unit}", SHADE)
     if counts["overflow_commits"]:
         paint_text(d, (210, 85), f"+{counts['overflow_commits']}", GOLD)
+    cargo_image.alpha_composite(image, (0, extra))
+    image = cargo_image
     if plan is not None:
         for index, box in enumerate(plan["large"]):
             column, tier = position(index)
-            x, y = 72 + column * 28, 66 - tier * 10
+            x, y = 72 + column * 28, 66 - tier * 10 + extra
             image.alpha_composite(container(box["label"]), (x, y))
     assert set(image.getchannel("A").tobytes()) == {0, 255}
     return image

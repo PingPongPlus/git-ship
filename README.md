@@ -49,6 +49,7 @@ That's it. Your fleet updates **daily** using the **past month** of data by defa
 | Rain and ocean ripples | Add `rain: 'true'` in the same place. [Preview](examples/rain-demo/git-ship.gif). |
 | Hide the watermark | Add `watermark: 'false'` in the same place. |
 | Show commit total | Add `display-commits: 'true'` to show the fleet's full total at the bottom right. |
+| Endless huge-ship stacks | Add `endless-cargo: 'true'` with `huge-cargo-ship: 'true'`. All cargo stacks upward; image height grows. Off by default. |
 | Include docs/config commits | Add `include-non-code: 'true'`. By default, only programming and scripting commits count. |
 
 ## Reading the standard fleet

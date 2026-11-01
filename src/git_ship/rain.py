@@ -45,11 +45,11 @@ def impact(draw: ImageDraw.ImageDraw, x: int, y: int, age: float) -> None:
         draw.line((x - radius + 2, y + 1, x + radius - 2, y + 1), fill=DEEP)
 
 
-def blocked_water(scene: Scene) -> Image.Image:
+def blocked_water(scene: Scene, *, vertical_offset: int = 0) -> Image.Image:
     """Reserve land and full moving hull envelopes, including transparent gaps."""
-    mask = Image.new("L", (WIDTH, HEIGHT))
+    mask = Image.new("L", (WIDTH, HEIGHT + vertical_offset))
     d = ImageDraw.Draw(mask)
-    d.rectangle((15, 25, 64, 106), fill=255)
+    d.rectangle((15, 25 + vertical_offset, 64, 106 + vertical_offset), fill=255)
     for ship in scene.ships:
         drift, bob = math.ceil(ship.drift), math.ceil(ship.bob)
         d.rectangle(
@@ -63,20 +63,23 @@ def blocked_water(scene: Scene) -> Image.Image:
         )
     if scene.huge_ship:
         ship = scene.huge_ship
-        d.rectangle((ship.x - 2, ship.y - 2, ship.x + 302, ship.y + 103), fill=255)
+        d.rectangle(
+            (ship.x - 2, ship.y - 2, ship.x + 302, ship.y + 103 + vertical_offset), fill=255
+        )
     if scene.fleet_commits is not None:
         d.rectangle((0, HEIGHT - COMMIT_FOOTER_HEIGHT, WIDTH - 1, HEIGHT - 1), fill=255)
     return mask
 
 
-def rain_drops(scene: Scene) -> tuple[Drop, ...]:
+def rain_drops(scene: Scene, *, vertical_offset: int = 0) -> tuple[Drop, ...]:
     """Independent seeded weather never changes the scene's layout or cargo."""
-    blocked = blocked_water(scene)
+    blocked = blocked_water(scene, vertical_offset=vertical_offset)
     rng = random.Random(stable_seed(f"{scene.layout_seed}:rain"))
     drops = []
     for _ in range(44):
         for _ in range(1000):
-            x, y = rng.randint(10, WIDTH - 11), rng.randint(91, HEIGHT - 11)
+            x = rng.randint(10, WIDTH - 11)
+            y = rng.randint(91, HEIGHT - 11) + vertical_offset
             if blocked.crop((x - 6, y - 2, x + 7, y + 2)).getbbox() is None:
                 drops.append(Drop(x, y, rng.random()))
                 break

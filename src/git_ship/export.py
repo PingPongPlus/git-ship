@@ -18,6 +18,7 @@ from .huge_ship import (
     COMMITS_PER_LARGE,
     HUGE_HEIGHT,
     HUGE_WIDTH,
+    cargo_stack_offset,
     huge_cargo_counts,
     language_cargo_plan,
 )
@@ -117,6 +118,7 @@ def export(
         report["activity_window_days"] = config.activity_window
         report["mode"] = "huge-cargo-ship" if config.huge_cargo_ship else "fleet"
         report["huge_cargo_ship"] = config.huge_cargo_ship
+        report["endless_cargo"] = config.endless_cargo and config.huge_cargo_ship
         report["cargo_logos"] = config.cargo_logos and config.huge_cargo_ship
         report["commits_per_large_container"] = (
             COMMITS_PER_LARGE if config.huge_cargo_ship else CARGO_GROUP_SIZE
@@ -155,7 +157,10 @@ def export(
             for s in scene.ships
         ]
         if config.huge_cargo_ship:
-            counts = huge_cargo_counts(scene.total_commits)
+            counts = huge_cargo_counts(scene.total_commits, endless_cargo=config.endless_cargo)
+            extra = cargo_stack_offset(scene.total_commits, endless_cargo=config.endless_cargo)
+            report["cargo_tiers"] = (counts["visible_large"] + 5) // 6
+            report["scene_vertical_offset"] = extra
             report["cargo_commits"] = counts["total"]
             report["total_commits"] = (
                 scene.authored_commits if scene.authored_commits is not None else counts["total"]
@@ -168,14 +173,14 @@ def export(
             if scene.cargo_languages is not None:
                 report["cargo_languages"] = dict(scene.cargo_languages)
                 report["cargo_containers"] = language_cargo_plan(
-                    scene.total_commits, scene.cargo_languages
+                    scene.total_commits, scene.cargo_languages, endless_cargo=config.endless_cargo
                 )
             report["huge_ship"] = (
                 {
                     "x": scene.huge_ship.x,
                     "y": scene.huge_ship.y,
                     "width": HUGE_WIDTH,
-                    "height": HUGE_HEIGHT,
+                    "height": HUGE_HEIGHT + extra,
                 }
                 if scene.huge_ship
                 else None

@@ -11,6 +11,7 @@ include_non_code = false # Only programming/scripting commits; true also include
 watermark = true # Optional top-left Git Ship label with the selected activity period.
 display_commits = false # Optional full commit total at the bottom right of the fleet.
 huge_cargo_ship = false # One heavy ship for all commits; large containers hold six commits.
+endless_cargo = false # Huge mode: stack every container upward and grow the image height.
 cargo_logos = false # Language symbols on the huge ship; adds per-commit language detection.
 include_forks = false
 include_archived = true

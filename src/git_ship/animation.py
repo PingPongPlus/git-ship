@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 from PIL import Image, ImageDraw
 
-from .config import HEIGHT, WIDTH, Config
-from .huge_ship import draw_heavy_water, huge_cargo_counts, huge_ship_sprite
+from .config import HEIGHT, WIDTH, Config, validate_render_size
+from .huge_ship import cargo_stack_offset, draw_heavy_water, huge_cargo_counts, huge_ship_sprite
 from .layout import Scene, Ship
 from .rain import draw_rain, rain_drops
 from .sprites import (
@@ -79,7 +79,7 @@ def smoke_puff(d: ImageDraw.ImageDraw, x: int, bottom: int, age: float) -> None:
     d.rectangle((x - radius + 1, bottom - 2 * radius, x + 1, bottom - radius), fill=SMOKE_LIGHT)
 
 
-def lighthouse_beam(image: Image.Image, t: float) -> None:
+def lighthouse_beam(image: Image.Image, t: float, *, vertical_offset: int = 0) -> None:
     """Fill empty space yellow and blend that light over existing artwork."""
     angle = TAU * (t % 1)
     facing = math.cos(angle)
@@ -90,6 +90,7 @@ def lighthouse_beam(image: Image.Image, t: float) -> None:
     if abs(reach) < 4:
         return
     x, y = LIGHT_ORIGIN
+    y += vertical_offset
     tip_x = x + reach
     tip_y = y + round((20 + 65 * math.sin(angle)) * depth)
     spread = max(1, round(24 * depth))
@@ -147,6 +148,13 @@ class Animator:
         if (config.cargo_logos and config.huge_cargo_ship) != (scene.cargo_languages is not None):
             raise ValueError("scene and cargo logos differ; rebuild the scene with layout()")
         self.scene, self.config = scene, config
+        self.vertical_offset = (
+            cargo_stack_offset(scene.total_commits, endless_cargo=config.endless_cargo)
+            if config.huge_cargo_ship
+            else 0
+        )
+        self.height = HEIGHT + self.vertical_offset
+        validate_render_size(WIDTH, self.height, config.scale, config.duration * config.fps)
         self.sprites = tuple(
             ship_sprite(s.style, s.width, s.language.cargo or 0) for s in scene.ships
         )
@@ -156,19 +164,25 @@ class Animator:
                 scene.huge_ship.total_commits,
                 scene.cargo_languages,
                 counter_total=scene.authored_commits,
+                endless_cargo=config.endless_cargo,
             )
             if scene.huge_ship
             else None
         )
-        self.rain_drops = rain_drops(scene) if config.rain else ()
+        self.rain_drops = (
+            rain_drops(scene, vertical_offset=self.vertical_offset) if config.rain else ()
+        )
 
     def frame(self, t: float) -> Image.Image:
         """t is loop phase in [0, 1); frame(0) == frame(1), no final hold."""
         t %= 1
-        image = Image.new("RGBA", (WIDTH, HEIGHT))
+        image = Image.new("RGBA", (WIDTH, self.height))
         d = ImageDraw.Draw(image)
-        image.alpha_composite(self.lights[int(math.sin(TAU * t * 2) > -0.55)], (17, 27))
+        image.alpha_composite(
+            self.lights[int(math.sin(TAU * t * 2) > -0.55)], (17, 27 + self.vertical_offset)
+        )
         for j, (x, y) in enumerate(((15, 106), (51, 105))):
+            y += self.vertical_offset
             p = (t * 2 + j * 0.5) % 1
             if 0.12 < p < 0.88:
                 wave(d, x + int(p * 2), y, 10 + int(3 * math.sin(math.pi * p)), int(p * 4) % 2)
@@ -177,10 +191,10 @@ class Animator:
             phase = (t + vessel.phase) % 1
             x = vessel.x + round(math.sin(TAU * phase))
             y = vessel.y + round(0.65 * math.sin(TAU * phase))
-            draw_heavy_water(d, x, y, phase)
+            draw_heavy_water(d, x, y + self.vertical_offset, phase)
             assert self.huge_sprite is not None
             image.alpha_composite(self.huge_sprite, (x, y))
-            draw_heavy_water(d, x, y, phase, foreground=True)
+            draw_heavy_water(d, x, y + self.vertical_offset, phase, foreground=True)
         for ship, sprite in zip(self.scene.ships, self.sprites, strict=True):
             m = ship_motion(ship, t)
             if ship.style.design == "trawler":
@@ -215,7 +229,7 @@ class Animator:
         if self.config.rain:
             image = draw_rain(image, self.rain_drops, t)
         if self.config.lighthouse_beam:
-            lighthouse_beam(image, t)
+            lighthouse_beam(image, t, vertical_offset=self.vertical_offset)
         if self.config.watermark:
             draw_watermark(image, self.config.activity_window)
         if self.scene.fleet_commits is not None:
@@ -228,7 +242,8 @@ class Animator:
             draw_commit_total(image, self.scene.authored_commits)
         if self.config.scale != 1:
             image = image.resize(
-                (WIDTH * self.config.scale, HEIGHT * self.config.scale), Image.Resampling.NEAREST
+                (WIDTH * self.config.scale, self.height * self.config.scale),
+                Image.Resampling.NEAREST,
             )
         return image
 
